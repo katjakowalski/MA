@@ -8,23 +8,25 @@ setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
 data <- read.csv(header=TRUE, sep=",", file="data_clear.csv")
 
-data <- subset(data, data$evi < 1.1 & data$evi >= 0)
+data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 
-data <- subset(data, data$year == 2017)
+data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
+#length(unique(data$plotid))
 #################################################################################
-length(unique(data$plotid))
 
 pheno_model <- function(plotid, 
                         index, 
                         doy, 
                         year, 
+                        stat_id,
                         min_obs = 10){
   
   data = data.frame(plotid,
                     index, 
                     doy, 
-                    year)      
+                    year,
+                    stat_id)      
   
   l_samples <- length(unique(data$plotid))             
   
@@ -33,19 +35,24 @@ pheno_model <- function(plotid,
   k <- 0
 
   for( p in unique(data$plotid)){
-    print(paste("plot: ", p))
+    #print(paste("plot: ", p))
+    
     transition <- c()
+    b4_start <- c()
     
     d = subset(data, data$plotid == p &  data$year == "2017")
   
-  
-    b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
+    stat_id <- d$stat_id[1]
     
-    
-    #print(paste(length(d$doy)))
+    d_tr <- subset(d, d$doy >= 75 & d$doy <=225)
+    transition <- with(d_tr, doy[index == max(index)]) + 20
+    d <- subset(d, d$doy <= transition)
+
     k <- k + 1
     if(length(d$doy) >= min_obs){
       
+      b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
+ 
       base_index <- mean(subset(d, d$doy <= 50)$index)
       
       if (is.nan(base_index)){
@@ -58,11 +65,8 @@ pheno_model <- function(plotid,
       df_base[c(1:50), ] <- rep(NA, ncol(df_base))       # fill 50 rows with NA 
       df_base$index <- base_index
       df_base$doy <- seq(1,50,1)
-      d <- rbind(d, df_base)
+      dat <- rbind(d, df_base)
 
-      d_tr <- subset(d, d$doy >= 75)
-      transition <- with(d_tr, doy[index == max(index)]) + 20
-      dat <- subset(d, d$doy <= transition) 
       
       #LOGISTIC FIT
       #par_b3 <- seq(0.05, 0.9, 0.05)
@@ -83,6 +87,9 @@ pheno_model <- function(plotid,
       #}
       
       if (class(nls_fit) == "nls") {
+        
+        dat$predict_nls <- predict(nls_fit)
+        mse_log <- mean(abs(dat$predict_nls - dat$index)^2)
 
         nls_fit_result[[k]] <- as.data.frame(data.frame(t(coef(nls_fit)), 
                                                         "plotid"=p,
@@ -90,8 +97,9 @@ pheno_model <- function(plotid,
                                                         "fit_error"= 0,
                                                         "transition" = transition,
                                                         "observations" = length(d$doy),
-                                                        "RSS_log" = sum(resid(nls_fit)^2),
-                                                        "RSS_gam" = NA))
+                                                        "MSE_log" = mse_log,
+                                                        "MSE_gam" = NA,
+                                                        "stat_id" = stat_id))
         
       }
       # if class NA:
@@ -105,8 +113,9 @@ pheno_model <- function(plotid,
                                                         "fit_error" = 1,
                                                         "transition" = transition,
                                                         "observations" = length(d$doy),
-                                                        "RSS_log" = NA,
-                                                        "RSS_gam"= NA))
+                                                        "MSE_log" = NA,
+                                                        "MSE_gam"= NA,
+                                                        "stat_id" = stat_id))
       }
       
       
@@ -119,6 +128,8 @@ pheno_model <- function(plotid,
       
       if(class(fit_sp) == "gam"){
         
+        dat$predict_gam <- predict(fit_sp)
+        mse_gam <- mean(abs(dat$predict_gam - dat$index)^2)
         
         newDF <- with(dat, data.frame(doy = seq(0, transition, 1)))  
         
@@ -145,8 +156,10 @@ pheno_model <- function(plotid,
                                                        "fit_error_sp" = 0,
                                                        "transition" = transition,
                                                        "observations" = length(d$doy),
-                                                       "RSS_gam" = sum(resid(fit_sp)^2),
-                                                       "RSS_log" = NA ))
+                                                       "MSE_gam" = mse_gam,
+                                                       "MSE_log" = NA,
+                                                       "stat_id" = stat_id))
+        #print(paste(sum(residuals(fit_sp)^2)))
         fd_d1 = NULL
         fit_sp = NULL
       }
@@ -158,8 +171,9 @@ pheno_model <- function(plotid,
                                                        "fit_error_sp"= 1,
                                                        "transition" = transition,
                                                        "observations" = length(d$doy),
-                                                       "RSS_gam" = NA, 
-                                                       "RSS_log" = NA ))
+                                                       "MSE_gam" = NA, 
+                                                       "MSE_log" = NA,
+                                                       "stat_id" = stat_id))
       }
     }
     # if observations < 10 
@@ -170,8 +184,9 @@ pheno_model <- function(plotid,
                                                      "fit_error_sp" = 0,
                                                      "transition" = 0,
                                                      "observations" = length(d$doy),
-                                                     "RSS_gam" = NA,
-                                                     "RSS_log" = NA))
+                                                     "MSE_gam" = NA,
+                                                     "MSE_log" = NA,
+                                                     "stat_id" = stat_id))
       
       nls_fit_result [[k]] <- as.data.frame(data.frame("b1" = NA,
                                                        "b2" = NA,
@@ -182,8 +197,9 @@ pheno_model <- function(plotid,
                                                        "fit_error" = 0,
                                                        "transition" = 0,
                                                        "observations" = length(d$doy),
-                                                       "RSS_log" = NA,
-                                                       "RSS_gam" = NA))
+                                                       "MSE_log" = NA,
+                                                       "MSE_gam" = NA,
+                                                       "stat_id" = stat_id))
     }
   }
   return(list(nls_fit_result, sp_fit_result))
@@ -193,70 +209,51 @@ pheno_model <- function(plotid,
 ####################################################################
 
 ptm <- proc.time()
-pheno_result_evi <- pheno_model(data$plotid, data$evi, data$doy, data$year)
+pheno_result_evi <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
 (proc.time() - ptm) / 60
+
+ptm <- proc.time()
+pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
+(proc.time() - ptm) / 60
+
 
 res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi[[1]]))
 res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi[[2]]))
-results_evi <- cbind(res_nls_evi, res_spl_evi[,c(1,3,4)])
+results_evi <- merge(res_spl_evi[, c(1,2,7,9)], res_nls_evi[, c(4,5,8,9,10)], by="plotid")
 
+res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
+res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
+results_ndvi <- merge(res_spl_ndvi[, c(1,2,7,9)], res_nls_ndvi[, c(4,5,8,9,10)], by="plotid")
+
+##
 
 mean(!is.na(results_evi$b4))
 mean(!is.na(results_evi$sp))
 
-mean(!is.na(results_evi$b4))
-mean(!is.na(results_evi$sp))
+mean(!is.na(results_ndvi$b4))
+mean(!is.na(results_ndvi$sp))
 
 
 cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
+cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 
 
-results_sub <- subset(results_v4, results_v4$elevation_sample >= 500 & 
-                        results_v4$elevation_sample <= 1000)
+quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+
+# results station dwd 
+
+completeVec <- complete.cases(results_evi[, c("sp","b4")])
+compl_evi <- results_evi[completeVec, ]
+compl_evi$plotid <- NULL
+mean_evi <- aggregate(. ~ stat_id, data=compl_evi, mean)
+
+completeVec <- complete.cases(results_ndvi[, c("sp","b4")])
+compl_ndvi <- results_ndvi[completeVec, ]
+compl_ndvi$plotid <- NULL
+mean_ndvi <- aggregate(. ~ stat_id, data=compl_ndvi, mean)
 
 
-ggplot(results_evi, aes(y = b4, x =sp)) + 
-  geom_point()+ 
-  #geom_text(aes(label = plotid))
-  labs(x="SOS (GAM)", y="SOS (LOG)")
+cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
+cor.test(mean_evi$b4, mean_evi$sp, use="complete.obs")
 
-ggplot(results_evi, aes(x = sp, y =b4)) + 
-  geom_point()+
-  coord_equal()+
-  geom_abline(intercept = 0, slope = 1)+
-  labs(x="DOY (GAM)", y="DOY (LOG)")
-
-
-sub_res_v4 <- results_v4[, c("b4","sp")]
-df_v4 <- melt(sub_res_v4)
-
-ggplot(data= results_v4)+
-  geom_histogram(aes(x= b4))
-
-ggplot(data= df_v4, aes(x=variable, y=value))+
-  geom_boxplot()+
-  stat_boxplot(geom="errorbar", width=0.5)
-
-boxplot(results_v4[, c("b4", "sp")])
-
-quantile(results_v4$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-quantile(results_v4$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
-
-
-completeVec <- complete.cases(results_v4[, c("b4","sp")])
-results_compl <- results_v4[completeVec, ]
-
-
-gam_mean <- aggregate(sp ~ station, data=results_compl, mean)
-log_mean <- aggregate(b4 ~ station, data=results_compl, mean)
-RSS_sp_mean <- aggregate(RSS_gam ~ station, data=results_compl, mean)
-RSS_log_mean <- aggregate(RSS_log ~ station, data=results_compl, mean)
-
-res_v4 <- merge(gam_mean, log_mean, by = "station")
-res_v4 <- merge(res_v4, RSS_mean, by="station")
-
-ggplot(data=res_v4)+
-  geom_point(aes(x=b4, y=RSS))
-
-ggplot(data=res_v4)+
-  geom_histogram(aes(x=RSS))

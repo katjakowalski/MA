@@ -11,7 +11,15 @@ data <- read.csv(header=TRUE, sep=",", file= "data_clear.csv")
 
 ############################################################
 
-plotid <- 169424
+plotid <- 75706
+
+  # 39012 not enough data
+  
+  #327119 problem with slope /1st value after base
+  
+  #36821
+
+  #169424
   #337606
 
 data_sub <- data[data$plotid== plotid & data$year == 2017,]
@@ -23,7 +31,7 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/ts_
 
 ggplot(data_sub, aes(x = doy, y = evi)) +
   geom_point(aes(shape=sensor))+
-  #geom_line()+
+  #geom_line(aes(x=doy, y=predict))+
   labs(x="DOY", y="EVI")+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
   theme(axis.text.x = element_text(size=14, color="black"),
@@ -38,7 +46,10 @@ dev.off()
 
 
 
-transition <- with(data_sub, doy[evi == max(evi)]) +20
+d_tr <- subset(data_sub, data_sub$doy >= 75 & data_sub$doy <=225)
+transition <- with(d_tr, doy[evi == max(evi)]) + 20
+data_sub <- subset(data_sub, data_sub$doy <= transition)
+
 data_sub <- data_sub[data_sub$doy <= transition, ]
 
 b4_start <- round(mean(data_sub[which(data_sub$evi > median(data_sub$evi)), "doy"]), 0)
@@ -60,8 +71,7 @@ data_sub <- rbind(data_sub, df_base)
 
 ## splines
 
-fit <- gam(evi ~ s(doy,  bs="tp"), data = data_sub)
-sum(resid(fit)^2)
+fit <- gam(evi ~ s(doy), data = data_sub)
 
 
 data_sub$predict <- predict(fit)
@@ -89,10 +99,6 @@ Xp <- (X0 - X1) / eps
 fd_d1 <- Xp %*% coef(fit)
 
 which.min(fd_d1) 
-max(fd_d1)
-fd_d1
-fd_d1[138]
-length(fd_d1)
 
 
 
@@ -102,7 +108,7 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam
 ggplot(data_sub) +
   geom_point(aes(x = doy, y = evi)) +
   geom_line(aes(x = doy, y = predict), size=0.8, color="red") +
-  geom_line(data = data.frame(doy = 0:246, deriv1 = fd_d1),
+  geom_line(data = data.frame(doy = 0:190, deriv1 = fd_d1),
             aes(x = doy, y = deriv1  *10 +0.2), color="blue")+
   #geom_point(aes(x=133, y=0.415), size=6, shape="x", color="blue")+
   geom_vline(xintercept=133, linetype="dotted")+
