@@ -241,6 +241,9 @@ cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
+quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+
 # results station dwd 
 
 completeVec <- complete.cases(results_evi[, c("sp","b4")])
@@ -256,4 +259,26 @@ mean_ndvi <- aggregate(. ~ stat_id, data=compl_ndvi, mean)
 
 cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
 cor.test(mean_evi$b4, mean_evi$sp, use="complete.obs")
+
+
+quantile(mean_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+
+quantile(mean_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+
+cor.test(results_ndvi$sp, results_ndvi$transition, use="complete.obs")
+
+mean(mean_evi$MSE_gam)
+
+
+setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany")
+stations <- read.csv(header=TRUE, sep=",", file="stations.csv")
+colnames(stations)[1] <- "stat_id"
+mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
+mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
+
+cor.test(mean_evi$b4, mean_evi$Stationsho, use="complete.obs")
+
+
 

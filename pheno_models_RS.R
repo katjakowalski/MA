@@ -71,14 +71,12 @@ data_sub <- rbind(data_sub, df_base)
 
 ## splines
 
-fit <- gam(evi ~ s(doy), data = data_sub)
+fit <- gam(evi ~ s(doy, bs="tp", k=20), data = data_sub)
 
-
+gam.check(fit)
 data_sub$predict <- predict(fit)
 
 summary(fit)
-
-
 
 
 
@@ -99,6 +97,7 @@ Xp <- (X0 - X1) / eps
 fd_d1 <- Xp %*% coef(fit)
 
 which.min(fd_d1) 
+
 
 
 
