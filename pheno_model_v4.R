@@ -12,7 +12,7 @@ data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
-#length(unique(data$plotid))
+length(unique(data_evi$plotid))
 #################################################################################
 
 pheno_model <- function(plotid, 
@@ -44,12 +44,14 @@ pheno_model <- function(plotid,
   
     stat_id <- d$stat_id[1]
     
-    d_tr <- subset(d, d$doy >= 75 & d$doy <=225)
-    transition <- with(d_tr, doy[index == max(index)]) + 20
-    d <- subset(d, d$doy <= transition)
+    #b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
 
     k <- k + 1
     if(length(d$doy) >= min_obs){
+      
+      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250)
+      transition <- with(d_tr, doy[index == max(index)]) + 20
+      d <- subset(d, d$doy <= transition)
       
       b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
  
@@ -65,9 +67,13 @@ pheno_model <- function(plotid,
       df_base[c(1:50), ] <- rep(NA, ncol(df_base))       # fill 50 rows with NA 
       df_base$index <- base_index
       df_base$doy <- seq(1,50,1)
-      dat <- rbind(d, df_base)
-
       
+      dat <- rbind(d, df_base)
+      
+      #d_tr <- subset(d, d$doy >= 75)
+      #transition <- with(d_tr, doy[index == max(index)]) + 20
+      #dat <- subset(d, d$doy <= transition)
+
       #LOGISTIC FIT
       #par_b3 <- seq(0.05, 0.9, 0.05)
       #for (i in par_b3) {
@@ -225,13 +231,16 @@ res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
 res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
 results_ndvi <- merge(res_spl_ndvi[, c(1,2,7,9)], res_nls_ndvi[, c(4,5,8,9,10)], by="plotid")
 
-##
+########################################################################
 
 mean(!is.na(results_evi$b4))
 mean(!is.na(results_evi$sp))
 
 mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
+
+write.csv(results_evi, file = "20181127_results_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20181127_results_ndvi.csv", row.names = FALSE)
 
 
 cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
@@ -243,6 +252,13 @@ quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+
+# differences LOG vs. GAM
+results_evi$b4_f <- round(results_evi$b4,0)
+results_evi$diff <- abs(results_evi$sp - results_evi$b4)
+
+results_ndvi$b4_f <- round(results_ndvi$b4,0)
+results_ndvi$diff <- abs(results_ndvi$sp - results_ndvi$b4)
 
 # results station dwd 
 
@@ -256,6 +272,15 @@ compl_ndvi <- results_ndvi[completeVec, ]
 compl_ndvi$plotid <- NULL
 mean_ndvi <- aggregate(. ~ stat_id, data=compl_ndvi, mean)
 
+mean_evi$b4_f <- round(mean_evi$b4,0)
+mean_evi$diff <- abs(mean_evi$sp - mean_evi$b4)
+
+mean_ndvi$b4_f <- round(mean_ndvi$b4,0)
+mean_ndvi$diff <- abs(mean_ndvi$sp - mean_ndvi$b4)
+
+mean(mean_ndvi$diff)
+mean(mean_evi$diff)
+############################################################################
 
 cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
 cor.test(mean_evi$b4, mean_evi$sp, use="complete.obs")
@@ -269,8 +294,6 @@ quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 cor.test(results_ndvi$sp, results_ndvi$transition, use="complete.obs")
 
-mean(mean_evi$MSE_gam)
-
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany")
 stations <- read.csv(header=TRUE, sep=",", file="stations.csv")
@@ -279,6 +302,5 @@ mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id")],by="stat_id",
 mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
 
 cor.test(mean_evi$b4, mean_evi$Stationsho, use="complete.obs")
-
 
 

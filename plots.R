@@ -10,9 +10,12 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/201
 ggplot(results_evi, aes(x = sp, y =b4)) + 
   geom_point(alpha=1/20)+
   coord_equal()+
-  geom_abline(intercept = 0, slope = 1)+
+  geom_abline(intercept = 0, slope = 1, color="red")+
   labs(x="SOS (GAM)", y="SOS (LOG)")+
-  scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
+  scale_x_continuous(labels=seq(0,350, 50), 
+                     breaks= seq(0,350, 50),
+                     limits = c(50,250))+
+  scale_y_continuous(limits=c(50,250))+
   theme(axis.text.x = element_text(size=14, color="black"),
         axis.text.y = element_text(size=14, color="black"),
         text = element_text(size=16),
@@ -22,12 +25,14 @@ dev.off()
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181123_NDVI.png", 
     width= 1200, height=1000, res=200 )
-ggplot(results_evi, aes(x = sp, y =b4)) + 
-  geom_point()+
+ggplot(results_ndvi, aes(x = sp, y =b4)) + 
+  geom_point(alpha=1/20)+
   coord_equal()+
-  geom_abline(intercept = 0, slope = 1)+
+  geom_abline(intercept = 0, slope = 1, color="red")+
   labs(x="SOS (GAM)", y="SOS (LOG)")+
-  scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
+  scale_x_continuous(labels=seq(0,350, 50), 
+                     breaks= seq(0,350, 50),
+                     limits=c(50,300))+
   theme(axis.text.x = element_text(size=14, color="black"),
         axis.text.y = element_text(size=14, color="black"),
         text = element_text(size=16),
@@ -35,6 +40,16 @@ ggplot(results_evi, aes(x = sp, y =b4)) +
         legend.position="none") 
 
 dev.off()
+
+# differences EVI GAM vs. LOG
+
+ggplot(data=results_evi)+
+  geom_histogram(aes(diff),binwidth=1, fill="lightgrey", color="black")
+
+ggplot(data=results_evi)+
+  geom_boxplot(aes(y=diff))
+
+quantile(results_evi$diff, na.rm=TRUE, c(0,.05, .50,  .75, .95))
 
 # MSE 
 ggplot(data=mean_evi)+
@@ -73,20 +88,20 @@ dev.off()
 
 # scatterplot station level
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181123_NDVI_station.png", 
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181123_EVI_station.png", 
     width= 1200, height=1000, res=200 )
 
-ggplot(mean_ndvi, aes(x = sp, y =b4)) + 
-  geom_point(alpha=1/3)+
+ggplot(mean_evi) + 
+  geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
   labs(x="SOS (GAM)", y="SOS (LOG)")+
   scale_x_continuous(labels=seq(0,350, 20), 
                      breaks= seq(0,350, 20),
-                     limits= c(65,180))+
+                     limits= c(80,160))+
   scale_y_continuous(labels=seq(0,350,20), 
                      breaks=seq(0,350,20),
-                     limits= c(65,180))+
+                     limits= c(80,160))+
   theme(axis.text.x = element_text(size=14, color="black"),
         axis.text.y = element_text(size=14, color="black"),
         text = element_text(size=16),
@@ -133,7 +148,26 @@ ggplot(estimates_ndvi_stat, aes(x=value, fill=variable)) +
   labs(x="DOY", y= "Count")
 dev.off()
 
+# percent converged 
+model_fits <- data.frame(
+  Convergence = c(mean(!is.na(results_evi$b4)),
+            mean(!is.na(results_evi$sp)),
+            mean(!is.na(results_ndvi$b4)),
+            mean(!is.na(results_ndvi$sp))),
+  Index = c("EVI", "EVI", "NDVI", "NDVI"),
+  Model = c ("LOG", "GAM", "LOG", "GAM")
+)
 
-  
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181127_convergence.png", 
+    width= 1200, height=1000, res=200 )
+ggplot(data=model_fits)+
+  geom_bar(aes(x= Index, y=Convergence, fill=Model), 
+           stat="identity", position = position_dodge2(),
+           width = 0.5, color="black")+
+  scale_fill_manual(values=c( "sienna3", "grey28"))+
+  theme(axis.text.x = element_text(size=14, color="black"),
+        axis.text.y = element_text(size=14, color="black"),
+        text = element_text(size=16))
 
+dev.off()
 

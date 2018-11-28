@@ -11,7 +11,10 @@ data <- read.csv(header=TRUE, sep=",", file= "data_clear.csv")
 
 ############################################################
 
-plotid <- 75706
+plotid <- 169424
+
+  # high NDVI late doy: 154407
+  # 120004, NDVI problem
 
   # 39012 not enough data
   
@@ -71,44 +74,40 @@ data_sub <- rbind(data_sub, df_base)
 
 ## splines
 
-fit <- gam(evi ~ s(doy, bs="tp", k=20), data = data_sub)
+fit_ols <- gam(evi ~ s(doy, bs="tp", sp=10 ), data = data_sub)
+fit_spl <- gam(evi~ s(doy, bs="tp"), data = data_sub)
+#gam.check(fit)
+data_sub$predict_ols <- predict(fit_ols)
+data_sub$predict_spl <- predict(fit_spl)
 
-gam.check(fit)
-data_sub$predict <- predict(fit)
-
-summary(fit)
+#summary(fit)
 
 
 
 newDF <- with(data_sub, data.frame(doy = seq(0, transition, 1)))  
-
 B <- predict(fit,  newDF, type = "response", se.fit = TRUE)
 
 
 eps <- 1e-7
 X0 <- predict(fit, newDF, type = 'lpmatrix')
-
 newDFeps_p <- newDF + eps
-
 X1 <- predict(fit, newDFeps_p, type = 'lpmatrix')
-
 Xp <- (X0 - X1) / eps
-
 fd_d1 <- Xp %*% coef(fit)
-
 which.min(fd_d1) 
 
 
+data_sub_pl <- melt(data_sub[,c("predict_ols","predict_spl")])
 
 
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_169424.png", 
     width= 1200, height=1000, res=200 )
-ggplot(data_sub) +
-  geom_point(aes(x = doy, y = evi)) +
-  geom_line(aes(x = doy, y = predict), size=0.8, color="red") +
-  geom_line(data = data.frame(doy = 0:190, deriv1 = fd_d1),
-            aes(x = doy, y = deriv1  *10 +0.2), color="blue")+
+ggplot() +
+  geom_point(data= data_sub, aes(x = doy, y = evi)) +
+  geom_line(data= data_sub_pl, aes(x = doy, y = predict), size=0.8, color="red") +
+  #geom_line(data = data.frame(doy = 0:190, deriv1 = fd_d1),
+            #aes(x = doy, y = deriv1  *10 +0.2), color="blue")+
   #geom_point(aes(x=133, y=0.415), size=6, shape="x", color="blue")+
   geom_vline(xintercept=133, linetype="dotted")+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
