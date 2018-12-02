@@ -33,7 +33,7 @@ pheno_model <- function(plotid,
   nls_fit_result <- vector("list", l_samples)          
   sp_fit_result <- vector("list", l_samples)
   k <- 0
-
+  
   for( p in unique(data$plotid)){
     #print(paste("plot: ", p))
     
@@ -41,20 +41,20 @@ pheno_model <- function(plotid,
     b4_start <- c()
     
     d = subset(data, data$plotid == p &  data$year == "2017")
-  
+    
     stat_id <- d$stat_id[1]
     
     #b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
-
+    
     k <- k + 1
     if(length(d$doy) >= min_obs){
       
-      d_tr <- subset(d, d$doy >= 75 & d$doy <= 225) ## 250 before 
+      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250)
       transition <- with(d_tr, doy[index == max(index)]) + 20
       d <- subset(d, d$doy <= transition)
       
       b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
- 
+      
       base_index <- mean(subset(d, d$doy <= 50)$index)
       
       if (is.nan(base_index)){
@@ -73,30 +73,30 @@ pheno_model <- function(plotid,
       #d_tr <- subset(d, d$doy >= 75)
       #transition <- with(d_tr, doy[index == max(index)]) + 20
       #dat <- subset(d, d$doy <= transition)
-
+      
       #LOGISTIC FIT
       #par_b3 <- seq(0.05, 0.9, 0.05)
       #for (i in par_b3) {
-        nls_fit <-
-          tryCatch(nls(index ~ b1 + (b2 / (1 + exp(-b3 * (doy - b4)))),
-              start = list(
-                b1 = min(index),
-                b2 = max(index),
-                b3 = 0.2,
-                b4 = b4_start),
-              data = dat),
-            error = function(e)
-              return(NA))
-       # if (class(nls_fit) == "nls")
+      nls_fit <-
+        tryCatch(nls(index ~ b1 + (b2 / (1 + exp(-b3 * (doy - b4)))),
+                     start = list(
+                       b1 = min(index),
+                       b2 = max(index),
+                       b3 = 0.2,
+                       b4 = b4_start),
+                     data = dat),
+                 error = function(e)
+                   return(NA))
+      # if (class(nls_fit) == "nls")
       #    break
-        
+      
       #}
       
       if (class(nls_fit) == "nls") {
         
         dat$predict_nls <- predict(nls_fit)
         mse_log <- mean(abs(dat$predict_nls - dat$index)^2)
-
+        
         nls_fit_result[[k]] <- as.data.frame(data.frame(t(coef(nls_fit)), 
                                                         "plotid"=p,
                                                         "obs_error"= 0,
@@ -152,10 +152,10 @@ pheno_model <- function(plotid,
         Xp <- (X0 - X1) / eps
         
         fd_d1 <- Xp %*% coef(fit_sp)
-  
+        
         sp_doy <- which.min(fd_d1)
-    
-      
+        
+        
         sp_fit_result[[k]] <- as.data.frame(data.frame("sp" = sp_doy, 
                                                        "plotid"=p,
                                                        "obs_error_sp" = 0,
@@ -239,8 +239,8 @@ mean(!is.na(results_evi$sp))
 mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
 
-write.csv(results_evi, file = "20181202_results_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20181202_results_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "20181127_results_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20181127_results_ndvi.csv", row.names = FALSE)
 
 
 cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
@@ -250,8 +250,8 @@ cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
-quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 # differences LOG vs. GAM
 results_evi$b4_f <- round(results_evi$b4,0)

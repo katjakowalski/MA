@@ -16,10 +16,10 @@ ggplot(results_evi, aes(x = sp, y =b4)) +
                      breaks= seq(0,350, 50),
                      limits = c(50,250))+
   scale_y_continuous(limits=c(50,250))+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16),
-        legend.text=element_text(size=14)) 
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20),
+        legend.text=element_text(size=18)) 
 
 dev.off()
 
@@ -74,9 +74,9 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/201
     width= 1200, height=1000, res=200 )
 ggplot(estimates_evi, aes(x=value, fill=variable)) + 
   geom_histogram(alpha=0.6, position="identity", binwidth=1)+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16))+
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20))+
   scale_fill_manual(values=c("gray0", "sienna3"), 
                     labels=c("LOG", "GAM"),
                     name=c("Model"))+
@@ -91,7 +91,7 @@ dev.off()
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181123_EVI_station.png", 
     width= 1200, height=1000, res=200 )
 
-ggplot(mean_evi) + 
+ggplot(mean_ndvi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
@@ -165,9 +165,13 @@ ggplot(data=model_fits)+
            stat="identity", position = position_dodge2(),
            width = 0.5, color="black")+
   scale_fill_manual(values=c( "sienna3", "grey28"))+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16))
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20))
 
 dev.off()
+
+
+
+
 
