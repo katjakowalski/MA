@@ -7,7 +7,7 @@ library(ggplot2)
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181120_EVI.png", 
     width= 1200, height=1000, res=200 )
-ggplot(results_evi, aes(x = sp, y =b4)) + 
+ggplot(results_ndvi, aes(x = sp, y =b4)) + 
   geom_point(alpha=1/20)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1, color="red")+
@@ -91,7 +91,7 @@ dev.off()
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181123_EVI_station.png", 
     width= 1200, height=1000, res=200 )
 
-ggplot(mean_ndvi) + 
+ggplot(mean_evi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
@@ -171,7 +171,64 @@ ggplot(data=model_fits)+
 
 dev.off()
 
+# percentiles SOS station
+
+f <- function(x) {
+  r <- quantile(x, probs = c(0.05, 0.25, 0.5, 0.75, 0.95))
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r
+}
+
+mean_est_evi <- mean_evi[, c("b4","sp")]
+mean_est_evi <- melt(mean_est_evi)
+mean_est_evi$Index <- "EVI"
+
+mean_est_ndvi <- mean_ndvi[, c("b4","sp")]
+mean_est_ndvi <- melt(mean_est_ndvi)
+mean_est_ndvi$Index <- "NDVI"
+
+mean_est_plot <- merge(mean_est_evi, mean_est_ndvi, all=TRUE)
+mean_est_plot$variable <- as.character(mean_est_plot$variable)
+mean_est_plot$variable[mean_est_plot$variable == "b4"] <- "LOG"
+mean_est_plot$variable[mean_est_plot$variable == "sp"] <- "GAM"
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181203_quantiles_stations.png", 
+    width= 1200, height=1000, res=200 )
+ggplot(mean_est_plot, aes(y=value, x=variable, fill=Index )) +
+  stat_summary(fun.data = f, geom="boxplot", position=position_dodge())+
+  scale_fill_manual(values=c( "sienna3", "grey28"))+
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20))+
+  labs(x="Model", y="SOS")
+dev.off()
+
+# MSE station mean 
+
+MSE <- data.frame(
+  MSE = c(mean(mean_evi$MSE_log)*100,
+          mean(mean_evi$MSE_gam)*100,
+          mean(mean_ndvi$MSE_log)*100,
+          mean(mean_ndvi$MSE_gam)*100),
+  Index = c("EVI", "EVI", "NDVI", "NDVI"),
+  Model = c ("LOG", "GAM", "LOG", "GAM")
+)
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181202_MSE.png", 
+    width= 1200, height=1000, res=200 )
+
+ggplot(data=MSE)+
+  geom_bar(aes(x= Index, y=MSE, fill=Model), 
+           stat="identity", position = position_dodge2(),
+           width = 0.5, color="black")+
+  scale_fill_manual(values=c( "sienna3", "grey28"))+
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20))+
+  labs( x="Index", y= "MSE*100")
+
+dev.off()
 
 
-
-
+ggplot(data=mean_evi)+
+  geom_point(aes(x=b4, y=observations))

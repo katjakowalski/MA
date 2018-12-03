@@ -44,8 +44,6 @@ pheno_model <- function(plotid,
   
     stat_id <- d$stat_id[1]
     
-    #b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
-
     k <- k + 1
     if(length(d$doy) >= min_obs){
       
@@ -239,8 +237,8 @@ mean(!is.na(results_evi$sp))
 mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
 
-write.csv(results_evi, file = "20181202_results_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20181202_results_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "20181203_results_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20181203_results_ndvi.csv", row.names = FALSE)
 
 
 cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
@@ -280,6 +278,14 @@ mean_ndvi$diff <- abs(mean_ndvi$sp - mean_ndvi$b4)
 
 mean(mean_ndvi$diff)
 mean(mean_evi$diff)
+
+mean(mean_evi$MSE_gam)*1000
+mean(mean_evi$MSE_log)*1000
+
+mean(mean_ndvi$MSE_gam)*1000
+mean(mean_ndvi$MSE_log)*1000
+
+
 ############################################################################
 
 cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
@@ -292,6 +298,17 @@ quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(mean_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
+quantiles <- data.frame(pct5=c(quantile(mean_evi$b4, na.rm=TRUE, .05),
+                              quantile(mean_evi$sp, na.rm=TRUE, .05),
+                              quantile(mean_ndvi$sp, na.rm=TRUE, .05),
+                              quantile(mean_ndvi$b4, na.rm=TRUE, .05)),
+                        pct95 = c(quantile(mean_evi$b4, na.rm=TRUE, .95),
+                                 quantile(mean_evi$sp, na.rm=TRUE, .95),
+                                 quantile(mean_ndvi$sp, na.rm=TRUE, .95),
+                                 quantile(mean_ndvi$b4, na.rm=TRUE, .05)),
+                        Index = c("EVI","EVI","NDVI","NDVI"),
+                        Model = c("LOG","GAM", "GAM", "LOG" ))
+
 cor.test(results_ndvi$sp, results_ndvi$transition, use="complete.obs")
 
 
@@ -301,6 +318,10 @@ colnames(stations)[1] <- "stat_id"
 mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
 mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
 
-cor.test(mean_evi$b4, mean_evi$Stationsho, use="complete.obs")
+sub_evi <- subset(mean_evi, mean_evi$Stationsho >450)
 
+cor.test(sub_evi$sp, sub_evi$Stationsho, use="complete.obs")
+
+ggplot(data=sub_evi)+
+  geom_point(aes(x= sp, y=Stationsho))
 
