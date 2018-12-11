@@ -5,6 +5,7 @@ library(reshape2)
 
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
+setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany")
 
 data <- read.csv(header=TRUE, sep=",", file="data_clear.csv")
 
@@ -47,7 +48,7 @@ pheno_model <- function(plotid,
     k <- k + 1
     if(length(d$doy) >= min_obs){
       
-      d_tr <- subset(d, d$doy >= 75 & d$doy <= 225) ## 250 before 
+      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250) ## 250 before 
       transition <- with(d_tr, doy[index == max(index)]) + 20
       d <- subset(d, d$doy <= transition)
       
@@ -102,7 +103,6 @@ pheno_model <- function(plotid,
                                                         "transition" = transition,
                                                         "observations" = length(d$doy),
                                                         "MSE_log" = mse_log,
-                                                        "MSE_gam" = NA,
                                                         "stat_id" = stat_id))
         
       }
@@ -118,7 +118,6 @@ pheno_model <- function(plotid,
                                                         "transition" = transition,
                                                         "observations" = length(d$doy),
                                                         "MSE_log" = NA,
-                                                        "MSE_gam"= NA,
                                                         "stat_id" = stat_id))
       }
       
@@ -126,7 +125,7 @@ pheno_model <- function(plotid,
       #SPLINE FIT  
       
       
-      fit_sp <- tryCatch(gam(index ~ s(doy), data = dat), error = function(e) return(NA))
+      fit_sp <- tryCatch(gam(index ~ s(doy, sp=0.005), data = dat), error = function(e) return(NA))
       
       ## 1st derivative to estimate slope 
       
@@ -161,8 +160,8 @@ pheno_model <- function(plotid,
                                                        "transition" = transition,
                                                        "observations" = length(d$doy),
                                                        "MSE_gam" = mse_gam,
-                                                       "MSE_log" = NA,
-                                                       "stat_id" = stat_id))
+                                                       "stat_id" = stat_id,
+                                                       "GCV_gam" = as.numeric(fit_sp$gcv.ubre)))
         #print(paste(sum(residuals(fit_sp)^2)))
         fd_d1 = NULL
         fit_sp = NULL
@@ -176,8 +175,8 @@ pheno_model <- function(plotid,
                                                        "transition" = transition,
                                                        "observations" = length(d$doy),
                                                        "MSE_gam" = NA, 
-                                                       "MSE_log" = NA,
-                                                       "stat_id" = stat_id))
+                                                       "stat_id" = stat_id,
+                                                       "GCV_gam" = NA))
       }
     }
     # if observations < 10 
@@ -189,8 +188,8 @@ pheno_model <- function(plotid,
                                                      "transition" = 0,
                                                      "observations" = length(d$doy),
                                                      "MSE_gam" = NA,
-                                                     "MSE_log" = NA,
-                                                     "stat_id" = stat_id))
+                                                     "stat_id" = stat_id,
+                                                     "GCV_gam" =NA ))
       
       nls_fit_result [[k]] <- as.data.frame(data.frame("b1" = NA,
                                                        "b2" = NA,
@@ -202,7 +201,6 @@ pheno_model <- function(plotid,
                                                        "transition" = 0,
                                                        "observations" = length(d$doy),
                                                        "MSE_log" = NA,
-                                                       "MSE_gam" = NA,
                                                        "stat_id" = stat_id))
     }
   }
@@ -213,43 +211,47 @@ pheno_model <- function(plotid,
 ####################################################################
 
 ptm <- proc.time()
-pheno_result_evi <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
+pheno_result_evi_k <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
 (proc.time() - ptm) / 60
 
 ptm <- proc.time()
-pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
+pheno_result_ndvi_ <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
 (proc.time() - ptm) / 60
 
 
-res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi[[1]]))
-res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi[[2]]))
-results_evi <- merge(res_spl_evi[, c(1,2,7,9)], res_nls_evi[, c(4,5,8,9,10)], by="plotid")
+res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[1]]))
+res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[2]]))
+results_evi <- merge(res_spl_evi[, c(1:9)], res_nls_evi[, c(4,5,7,10)], by="plotid")
 
-res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
-res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
-results_ndvi <- merge(res_spl_ndvi[, c(1,2,7,9)], res_nls_ndvi[, c(4,5,8,9,10)], by="plotid")
+res_nls_ndvi_k <- data.frame(do.call(rbind, pheno_result_ndvi_[[1]]))
+res_spl_ndvi_k <- data.frame(do.call(rbind, pheno_result_ndvi_[[2]]))
+results_ndvi_k <- merge(res_spl_ndvi_k[, c(1:9)], res_nls_ndvi_k[, c(4,5,7,10)], by="plotid")
 
 ########################################################################
 
 mean(!is.na(results_evi$b4))
 mean(!is.na(results_evi$sp))
 
+mean(!is.na(results_ndvi_k$b4))
+mean(!is.na(results_ndvi_k$sp))
+
 mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
 
-write.csv(results_evi, file = "20181203_results_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20181203_results_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "20181204_results_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20181204_results_ndvi.csv", row.names = FALSE)
 
+
+# Correlation
 
 cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
 cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 
-
-quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
-
-quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+# Quantiles 
+# quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+# quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+# quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+# quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 # differences LOG vs. GAM
 results_evi$b4_f <- round(results_evi$b4,0)
@@ -318,10 +320,32 @@ colnames(stations)[1] <- "stat_id"
 mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
 mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
 
-sub_evi <- subset(mean_evi, mean_evi$Stationsho >450)
 
-cor.test(sub_evi$sp, sub_evi$Stationsho, use="complete.obs")
 
-ggplot(data=sub_evi)+
-  geom_point(aes(x= sp, y=Stationsho))
+# observations & model differences 
+results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations")], 
+                    results_evi[, c("plotid","b4","sp")], 
+                    by="plotid")
+colnames(results_px) <- c("plotid","LOG_NDVI", "GAM_NDVI","observations","LOG_EVI","GAM_EVI")
+results_px$GAM_diff <- abs(results_px$GAM_NDVI- results_px$GAM_EVI)
+results_px$LOG_diff <- abs(results_px$LOG_NDVI - results_px$LOG_EVI)
+
+cor.test(results_px$GAM_diff, results_px$observations, use="complete.obs")
+cor.test(results_px$LOG_diff, results_px$observations, use="complete.obs")
+
+ggplot(data=results_px)+
+  geom_point(aes(x=observations, y=LOG_diff), alpha=1/10)
+
+
+# differences between indices 
+
+mean_results <- merge(mean_evi[, c("stat_id","b4","sp","observations")], 
+                      mean_ndvi[, c("stat_id","b4","sp")], 
+                      by="stat_id")
+colnames(mean_results) <- c("stat_id","LOG_EVI", "GAM_EVI","observations",
+                            "LOG_NDVI","GAM_NDVI")
+
+cor.test(mean_results$LOG_NDVI, mean_results$LOG_EVI, use="complete.obs")
+cor.test(mean_results$GAM_NDVI, mean_results$GAM_EVI, use="complete.obs")
+
 
