@@ -223,23 +223,21 @@ res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[1]]))
 res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[2]]))
 results_evi <- merge(res_spl_evi[, c(1:9)], res_nls_evi[, c(4,5,7,10)], by="plotid")
 
-res_nls_ndvi_k <- data.frame(do.call(rbind, pheno_result_ndvi_[[1]]))
-res_spl_ndvi_k <- data.frame(do.call(rbind, pheno_result_ndvi_[[2]]))
-results_ndvi_k <- merge(res_spl_ndvi_k[, c(1:9)], res_nls_ndvi_k[, c(4,5,7,10)], by="plotid")
+res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi_[[1]]))
+res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi_[[2]]))
+results_ndvi <- merge(res_spl_ndvi[, c(1:9)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
 
 ########################################################################
 
 mean(!is.na(results_evi$b4))
 mean(!is.na(results_evi$sp))
 
-mean(!is.na(results_ndvi_k$b4))
-mean(!is.na(results_ndvi_k$sp))
-
 mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
 
-write.csv(results_evi, file = "20181204_results_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20181204_results_ndvi.csv", row.names = FALSE)
+
+write.csv(results_evi, file = "20181211_results_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20181211_results_ndvi.csv", row.names = FALSE)
 
 
 # Correlation
@@ -248,10 +246,10 @@ cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
 cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 
 # Quantiles 
-# quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-# quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
-# quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
-# quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_evi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
+quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 # differences LOG vs. GAM
 results_evi$b4_f <- round(results_evi$b4,0)
@@ -317,9 +315,11 @@ cor.test(results_ndvi$sp, results_ndvi$transition, use="complete.obs")
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany")
 stations <- read.csv(header=TRUE, sep=",", file="stations.csv")
 colnames(stations)[1] <- "stat_id"
-mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
-mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id")],by="stat_id", all.x=TRUE)
+mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id","X", "Y")],by="stat_id", all.x=TRUE)
+mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id", "X","Y")],by="stat_id", all.x=TRUE)
 
+write.csv(mean_evi, file="20181211_mean_evi.csv",row.names = FALSE )
+write.csv(mean_ndvi, file="20181211_mean_ndvi.csv",row.names = FALSE )
 
 
 # observations & model differences 
