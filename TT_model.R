@@ -87,7 +87,7 @@ SOS_TT <- tt_model(statid=tmk$STATION_ID,
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
 
 pheno_rs <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
-
+results_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE, sep=",")
 pheno_rs <- merge(pheno_rs, SOS_TT, by="stat_id", all.x=TRUE)
 
 cor.test(pheno_rs$b4, pheno_rs$TT, use="complete.obs")

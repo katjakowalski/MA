@@ -97,8 +97,20 @@ SOS_CD <- cd_model(statid=tmk$STATION_ID,
                    doy= tmk$doy,
                    date = tmk$datum)
 
-SOS_MM <- merge(SOS_TT, SOS_CD, by="stat_id", all.x=TRUE)
 
-ggplot(data=SOS_MM)+
-  geom_point(aes(x=CD, y=TT))
+pheno_rs <- merge(pheno_rs, SOS_CD, by="stat_id", all.x=TRUE)
+
+cor.test(pheno_rs$b4, pheno_rs$CD, use="complete.obs")
+cor.test(pheno_rs$sp, pheno_rs$CD, use="complete.obs")
+
+
+pheno_rs$diff_GAM_CD <- abs(pheno_rs$sp - pheno_rs$CD)
+pheno_rs$diff_LOG_CD <- abs(pheno_rs$b4 - pheno_rs$CD)
+
+mean(pheno_rs$diff_GAM_CD, na.rm = TRUE)
+mean(pheno_rs$diff_LOG_CD, na.rm = TRUE)
+
+quantile(pheno_rs$CD, na.rm=TRUE, c(.05, .50,  .95))
+
+
 

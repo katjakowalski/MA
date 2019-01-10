@@ -68,14 +68,9 @@ pheno_model <- function(plotid,
       df_base$doy <- seq(1,50,1)
       
       dat <- rbind(d, df_base)
-      
-      #d_tr <- subset(d, d$doy >= 75)
-      #transition <- with(d_tr, doy[index == max(index)]) + 20
-      #dat <- subset(d, d$doy <= transition)
 
       #LOGISTIC FIT
-      #par_b3 <- seq(0.05, 0.9, 0.05)
-      #for (i in par_b3) {
+
         nls_fit <-
           tryCatch(nls(index ~ b1 + (b2 / (1 + exp(-b3 * (doy - b4)))),
               start = list(
@@ -86,11 +81,7 @@ pheno_model <- function(plotid,
               data = dat),
             error = function(e)
               return(NA))
-       # if (class(nls_fit) == "nls")
-      #    break
-        
-      #}
-      
+
       if (class(nls_fit) == "nls") {
         
         dat$predict_nls <- predict(nls_fit)
@@ -162,7 +153,7 @@ pheno_model <- function(plotid,
                                                        "MSE_gam" = mse_gam,
                                                        "stat_id" = stat_id,
                                                        "GCV_gam" = as.numeric(fit_sp$gcv.ubre)))
-        #print(paste(sum(residuals(fit_sp)^2)))
+ 
         fd_d1 = NULL
         fit_sp = NULL
       }
@@ -316,7 +307,7 @@ setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany")
 stations <- read.csv(header=TRUE, sep=",", file="stations.csv")
 colnames(stations)[1] <- "stat_id"
 mean_evi <- merge(mean_evi, stations[, c("Stationsho", "stat_id","X", "Y")],by="stat_id", all.x=TRUE)
-mean_ndvi <- merge(mean_ndvi, stations[, c("Stationsho", "stat_id", "X","Y")],by="stat_id", all.x=TRUE)
+mean_ndvi <- merge(results_ndvi, stations[, c("Stationsho", "stat_id", "X","Y")],by="stat_id", all.x=TRUE)
 
 write.csv(mean_evi, file="20181211_mean_evi.csv",row.names = FALSE )
 write.csv(mean_ndvi, file="20181211_mean_ndvi.csv",row.names = FALSE )
