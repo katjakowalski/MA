@@ -12,7 +12,7 @@ data <- read.csv(header=TRUE, sep=",", file= "data_clear.csv")
 
 ############################################################
 
-plotid <- 554102
+plotid <- 155005
   #554102
  # 243724
   #567618
@@ -88,15 +88,18 @@ data_sub <- rbind(data_sub, df_base)
 #            data = data_sub)
 
 
-fit_spl_evi <- gam(evi~ s(doy, bs="cs"), data = data_sub)
+fit_spl_evi <- gam(evi~ s(doy, sp=0.005),method="GCV.Cp", data = data_sub)
+fit_spl_evi$sp
+summary(fit_spl_evi)
+sapply(fit_spl_evi$smooth, "[[", "S.scale") / fit_spl_evi$sp 
+vcov_spl <- vcov.gam(fit_spl_evi)
+#fit_spl_ndvi <- gam(evi~ s(doy, bs="tp"), data = data_sub)
 
-fit_spl_ndvi <- gam(evi~ s(doy, bs="tp"), data = data_sub)
-
-data_sub$predict_ndvi <- as.numeric(predict(fit_spl_ndvi))
+#data_sub$predict_ndvi <- as.numeric(predict(fit_spl_ndvi))
 data_sub$predict_evi <- as.numeric(predict(fit_spl_evi))
+data_sub$vcov <- vcov(fit_spl_evi)
 
-
-
+plot(fit_spl_evi, scale=0, pages=1)
 
 newDF <- with(data_sub, data.frame(doy = seq(0, transition, 1)))  
 B <- predict(fit_spl_evi,  newDF, type = "response", se.fit = TRUE)
@@ -108,7 +111,7 @@ Xp <- (X0 - X1) / eps
 fd_d1 <- Xp %*% coef(fit_spl_evi)
 which.min(fd_d1) 
 
-data_sub_pl <- data_sub[, c("predict_evi","predict_ndvi")]
+data_sub_pl <- data_sub[, c("predict_evi")]
 data_sub_pl$predict_evi <- data_sub_pl$predict_evi
 data_sub_pl <- melt(data_sub_pl)
 data_sub_pl$doy <- rep(data_sub$doy,2)
@@ -139,12 +142,12 @@ dev.off()
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_169424.png", 
     width= 1200, height=1000, res=200 )
 ggplot(data= data_sub) +
-  geom_point(aes(x = doy, y = ndvi)) +
-  geom_line( aes(x=doy, y= predict_ndvi), color="red", size=0.8) +
-  geom_line(data = data.frame(doy = 0:190, deriv1 = fd_d1),
+  geom_point(aes(x = doy, y = evi)) +
+  geom_line( aes(x=doy, y= predict_evi), color="red", size=0.8) +
+  geom_line(data = data.frame(doy = 0:174, deriv1 = fd_d1),
             aes(x = doy, y = (deriv1  *10 *-1)+0.3), color="black")+
-  geom_point(aes(x=133, y=0.425), size=3, color="red")+
-  geom_vline(xintercept=133, linetype="dotted")+
+  #geom_point(aes(x=133, y=0.425), size=3, color="red")+
+  #geom_vline(xintercept=133, linetype="dotted")+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
   theme(axis.text.x = element_text(size=18, color="black"),
         axis.text.y = element_text(size=18, color="black"),

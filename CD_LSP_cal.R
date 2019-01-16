@@ -4,29 +4,42 @@ tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
+colnames(tmk)[2] <- "stat_id"
 
+# load LSP data 
+setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/")
+LSP_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE)
+LSP_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE)
 
-cd_model <- function(statid, 
+LSP <- merge(LSP_evi[, c("b4", "sp", "stat_id")], LSP_ndvi[, c("b4", "sp", "stat_id")], by="stat_id")
+colnames(LSP) <- c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI", "GAM_NDVI")
+
+data <- merge(tmk, LSP_evi[, c("b4", "sp", "stat_id")], by="stat_id", all.x=TRUE)
+data <- data[!is.na(data$sp), ]
+data <- data[!is.na(data$b4), ]
+
+cd_LSP <- function(statid, 
                      t_day, 
                      year,
                      doy,
                      date,
+                     t_crit,
                      f_base= 5,
                      c_base = 5,
-                     f_crit = 250,
-                     c_crit = 90) {
+                     c_crit = 80) {
   
   data = data.frame(statid, 
                     t_day,
                     year, 
                     doy,
-                    date)
+                    date,
+                    t_crit)
   
-  SOS_CD <- NULL
+  SOS_LSP <- NULL
   #k <- 0
   
   for( i in unique(data$statid)){
-
+    
     d_f = subset(data, data$statid == i & data$year == 2017)
     d_c = subset(data, data$statid == i & data$date >= "2016-09-01" & data$date <= "2017-05-01" )
     
@@ -34,7 +47,7 @@ cd_model <- function(statid,
     print(paste("dc", length(d_c$doy)))
     
     if(length(d_f$doy) >= 330 & length(d_c$doy) >= 190 ){
-      
+      F_crit <- d_f$t_crit[1]
       forcing <- 0
       chilling <- 0 
       #k <- k + 1
@@ -65,15 +78,15 @@ cd_model <- function(statid,
           dat <- subset(d_f, d_f$doy == f)
           doy_sos <- dat$doy
           t <- dat$t_day
-
-        
+          
+          
           if (t >= c_base){
             val = t-c_base
             forcing = forcing + val 
           }
           
-          if (forcing >= f_crit){
-           
+          if (forcing >= F_crit){
+            
             out <- data.frame("stat_id" = i, 
                               "CD" = doy_sos)
             SOS_CD <- rbind(SOS_CD, out)
@@ -84,7 +97,7 @@ cd_model <- function(statid,
       }
       #if (is.null(out)){
       #  print(paste(i))
-
+      
       #}
     }
     else{print(paste("obs", i))}
@@ -93,29 +106,9 @@ cd_model <- function(statid,
 }
 
 
-SOS_CD <- cd_model(statid=tmk$STATION_ID, 
-                   t_day=tmk$WERT,
-                   year = tmk$year,
-                   doy= tmk$doy,
-                   date = tmk$datum)
-
-# merge with RS SOS estimates 
-setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-pheno_rs <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
-pheno_rs <- merge(pheno_rs, SOS_CD, by="stat_id", all.x=TRUE)
-
-# correlation
-cor.test(pheno_rs$b4, pheno_rs$CD, use="complete.obs")
-cor.test(pheno_rs$sp, pheno_rs$CD, use="complete.obs")
-
-
-pheno_rs$diff_GAM_CD <- abs(pheno_rs$sp - pheno_rs$CD)
-pheno_rs$diff_LOG_CD <- abs(pheno_rs$b4 - pheno_rs$CD)
-
-mean(pheno_rs$diff_GAM_CD, na.rm = TRUE)
-mean(pheno_rs$diff_LOG_CD, na.rm = TRUE)
-
-quantile(pheno_rs$CD, na.rm=TRUE, c(.05, .50,  .95))
-
-
-
+GDD_CD_GAM <- cd_LSP(statid=data$stat_id, 
+                   t_day=data$WERT,
+                   year = data$year,
+                   doy= data$doy,
+                   date = data$datum,
+                   t_crit =data$sp )

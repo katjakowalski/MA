@@ -136,6 +136,32 @@ ggplot(mean_ndvi) +
 
 dev.off()
 
+#scatterplot station level in one
+
+LSP$stat_id=NULL
+LSP_plot <- LSP
+
+ggplot(data=LSP) + 
+  geom_point(aes(x= LOG_EVI, y=GAM_EVI),color="darkblue", alpha=1/5)+
+  geom_point(aes(x= LOG_NDVI, y=GAM_NDVI),color="red", alpha=1/9)+
+  coord_equal()+
+  geom_abline(intercept = 0, slope = 1)+
+  labs(x="SOS (GAM)", y="SOS (LOG)")+
+  scale_x_continuous(labels=seq(0,350, 20), 
+                     breaks= seq(0,350, 20),
+                     limits= c(60,160))+
+  scale_y_continuous(labels=seq(0,350,20), 
+                     breaks=seq(0,350,20),
+                     limits= c(60,160))+
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        text = element_text(size=20),
+        legend.text=element_text(size=18)) +
+  ggtitle("NDVI")
+
+dev.off()
+
+
 # histogram station level
 
 estimates_evi_stat <- mean_evi[, c("b4","sp")]

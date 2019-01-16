@@ -14,6 +14,11 @@ data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
 length(unique(data_evi$plotid))
+
+plot_d <- subset(data_evi, data_evi$doy >= 50 & data_evi$doy <= 250)
+ggplot(data=plot_d)+
+  geom_histogram(aes(x=evi), binwidth=0.001)
+
 #################################################################################
 
 pheno_model <- function(plotid, 
@@ -44,8 +49,9 @@ pheno_model <- function(plotid,
     d = subset(data, data$plotid == p &  data$year == "2017")
   
     stat_id <- d$stat_id[1]
-    
+
     k <- k + 1
+    
     if(length(d$doy) >= min_obs){
       
       d_tr <- subset(d, d$doy >= 75 & d$doy <= 250) ## 250 before 
@@ -116,7 +122,7 @@ pheno_model <- function(plotid,
       #SPLINE FIT  
       
       
-      fit_sp <- tryCatch(gam(index ~ s(doy, sp=0.005), data = dat), error = function(e) return(NA))
+      fit_sp <- tryCatch(gam(index ~ s(doy, sp = 0.005),method="REML", data = dat), error = function(e) return(NA))
       
       ## 1st derivative to estimate slope 
       
@@ -180,7 +186,7 @@ pheno_model <- function(plotid,
                                                      "observations" = length(d$doy),
                                                      "MSE_gam" = NA,
                                                      "stat_id" = stat_id,
-                                                     "GCV_gam" =NA ))
+                                                     "GCV_gam" =NA))
       
       nls_fit_result [[k]] <- as.data.frame(data.frame("b1" = NA,
                                                        "b2" = NA,
@@ -227,8 +233,18 @@ mean(!is.na(results_ndvi$b4))
 mean(!is.na(results_ndvi$sp))
 
 
-write.csv(results_evi, file = "20181211_results_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20181211_results_ndvi.csv", row.names = FALSE)
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+results_evi$ID_s <- substrRight(results_evi$plotid, 2)
+results_evi$ID <- as.integer(substr(results_evi$plotid, nchar(results_evi$plotid)- 7 +1, nchar(results_evi$plotid)-2))
+results_ndvi$ID_s <- substrRight(results_ndvi$plotid, 2)
+results_ndvi$ID <- as.integer(substr(results_ndvi$plotid, nchar(results_ndvi$plotid)- 7 +1, nchar(results_ndvi$plotid)-2))
+
+
+write.csv(results_evi, file = "results/2019016_results_evi.csv", row.names = FALSE)
+
+write.csv(results_ndvi, file = "results/20190116_results_ndvi.csv", row.names = FALSE)
 
 
 # Correlation
@@ -243,10 +259,9 @@ quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50,  .75, .95))
 quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 # differences LOG vs. GAM
-results_evi$b4_f <- round(results_evi$b4,0)
+
 results_evi$diff <- abs(results_evi$sp - results_evi$b4)
 
-results_ndvi$b4_f <- round(results_ndvi$b4,0)
 results_ndvi$diff <- abs(results_ndvi$sp - results_ndvi$b4)
 
 # results station dwd 
@@ -261,10 +276,10 @@ compl_ndvi <- results_ndvi[completeVec, ]
 compl_ndvi$plotid <- NULL
 mean_ndvi <- aggregate(. ~ stat_id, data=compl_ndvi, mean)
 
-mean_evi$b4_f <- round(mean_evi$b4,0)
+
 mean_evi$diff <- abs(mean_evi$sp - mean_evi$b4)
 
-mean_ndvi$b4_f <- round(mean_ndvi$b4,0)
+
 mean_ndvi$diff <- abs(mean_ndvi$sp - mean_ndvi$b4)
 
 mean(mean_ndvi$diff)

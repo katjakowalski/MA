@@ -12,9 +12,13 @@ colnames(tmk)[2] <- "stat_id"
 
 # load LSP data 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/")
-LSP <- read.csv(file="20181211_mean_evi.csv", header=TRUE)
+LSP_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE)
+LSP_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE)
 
-data <- merge(tmk, LSP[, c("b4", "sp", "stat_id")], by="stat_id", all.x=TRUE)
+LSP <- merge(LSP_evi[, c("b4", "sp", "stat_id")], LSP_ndvi[, c("b4", "sp", "stat_id")], by="stat_id")
+colnames(LSP) <- c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI", "GAM_NDVI")
+
+data <- merge(tmk, LSP_evi[, c("b4", "sp", "stat_id")], by="stat_id", all.x=TRUE)
 data <- data[!is.na(data$sp), ]
 data <- data[!is.na(data$b4), ]
 
