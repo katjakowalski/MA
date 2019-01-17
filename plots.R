@@ -234,6 +234,15 @@ f <- function(x) {
   r
 }
 
+quantile(mean_evi$sp, probs = c(0.05, 0.5, 0.95))
+quantile(mean_ndvi$sp, probs = c(0.05, 0.5, 0.95))
+quantile(mean_evi$b4, probs = c(0.05, 0.5, 0.95))
+quantile(mean_ndvi$b4, probs = c(0.05, 0.5, 0.95))
+mean(mean_evi$MSE_gam)
+mean(mean_ndvi$MSE_gam)
+mean(mean_evi$MSE_log)
+mean(mean_ndvi$MSE_log)
+
 mean_est_evi <- mean_evi[, c("b4","sp")]
 mean_est_evi <- melt(mean_est_evi)
 mean_est_evi$Index <- "EVI"

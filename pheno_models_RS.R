@@ -4,7 +4,7 @@ library(mgcv)
 library(tidyverse)
 library(ggplot2)
 library(reshape2)
-
+library(mgcViz)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
@@ -89,15 +89,19 @@ data_sub <- rbind(data_sub, df_base)
 
 
 fit_spl_evi <- gam(evi~ s(doy, sp=0.005),method="GCV.Cp", data = data_sub)
-fit_spl_evi$sp
+fit_spl_evi$coefficients
 summary(fit_spl_evi)
-sapply(fit_spl_evi$smooth, "[[", "S.scale") / fit_spl_evi$sp 
-vcov_spl <- vcov.gam(fit_spl_evi)
-#fit_spl_ndvi <- gam(evi~ s(doy, bs="tp"), data = data_sub)
+fit_spl_evi$coefficients
+attr(fit_spl_evi, "class")
+
+#mat <- predict.gam(fit_spl_evi, type="lpmatrix")
+#head(mat)
+#plot(data_sub$doy, mat[, "s(doy).9"], type="l")
+
 
 #data_sub$predict_ndvi <- as.numeric(predict(fit_spl_ndvi))
 data_sub$predict_evi <- as.numeric(predict(fit_spl_evi))
-data_sub$vcov <- vcov(fit_spl_evi)
+
 
 plot(fit_spl_evi, scale=0, pages=1)
 
@@ -182,3 +186,24 @@ ggplot(data=results_px)+
 
 ggplot(data=results_px)+
   geom_point(aes(x=LOG_EVI, y=LOG_NDVI))
+
+######################### mgcViz ###########################
+viz_spl <- getViz(fit_spl_evi)
+
+o <- plot( sm(viz_spl, 1) )
+o + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
+  l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
+  l_points(shape = 19, size = 1, alpha = 0.1) + theme_classic()
+
+
+print(plot(viz_spl, allTerms = T), pages = 1) # Calls print.plotGam()
+
+qq(viz_spl, method = "simul1", a.qqpoi = list("shape" = 1), a.ablin = list("linetype" = 2))
+qq(viz_spl, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2))
+
+
+check(viz_spl,
+      a.qq = list(method = "tnorm", 
+                  a.cipoly = list(fill = "light blue")), 
+      a.respoi = list(size = 0.5), 
+      a.hist = list(bins = 10))
