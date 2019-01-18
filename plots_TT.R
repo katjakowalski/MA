@@ -1,6 +1,7 @@
 
 library(ggplot2)
 library(reshape2)
+library(gridExtra)
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190107_EVI_TT_LOG.png", 
     width= 1200, height=1000, res=200 )
@@ -107,4 +108,37 @@ ggplot(data=pheno_rs)+
         text = element_text(size=18),
         legend.text=element_text(size=16)) +
   ggtitle("EVI")
+dev.off()
+
+
+# Forcing and chilling responses 
+eq1= function(x){x-5}
+eq2= function(x){x-x}
+
+rwrap=function(f,xmin,xmax){ff=function(x){y=f(x);y[x>xmax]=NA;y[x<xmin]=NA;y}}
+d=data.frame(x=c(-5,20))
+
+
+p1 <- ggplot(d,aes(x=x))+
+  stat_function(fun=rwrap(eq1,5,20),geom="line",col="darkblue", size=0.9) + 
+  stat_function(fun=rwrap(eq2,-5,5),geom="line",col="darkblue", size=0.9) +
+  theme(axis.text.x = element_text(size=16, color="black"),
+        axis.text.y = element_text(size=16, color="black"),
+        text = element_text(size=18),
+        legend.text=element_text(size=16)) +
+  labs(x=expression(x[t]), y="Forcing")
+
+p2 <- ggplot()+
+  geom_line(aes(x=5, y= c(0:1)), col="darkblue", size=0.9)+
+  geom_line(aes(x=c(0:5), y= 1), col="darkblue", size=0.9)+
+  theme(axis.text.x = element_text(size=16, color="black"),
+        axis.text.y = element_text(size=16, color="black"),
+        text = element_text(size=18),
+        legend.text=element_text(size=16)) +
+  scale_y_continuous(breaks=c(0,1))+
+  labs(x=expression(x[t]), y="Chilling")
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190118_response.png", 
+    width= 2000, height=1000, res=200 )
+grid.arrange(p1, p2, nrow = 1)
 dev.off()

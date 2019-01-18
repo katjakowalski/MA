@@ -88,11 +88,11 @@ data_sub <- rbind(data_sub, df_base)
 #            data = data_sub)
 
 
-fit_spl_evi <- gam(evi~ s(doy, sp=0.005),method="GCV.Cp", data = data_sub)
+fit_spl_evi <- gam(evi~ s(doy, sp=0),method="GCV.Cp", data = data_sub)
 fit_spl_evi$coefficients
 summary(fit_spl_evi)
 fit_spl_evi$coefficients
-attr(fit_spl_evi, "class")
+
 
 #mat <- predict.gam(fit_spl_evi, type="lpmatrix")
 #head(mat)

@@ -1,24 +1,38 @@
 
 library(lubridate)
 library(ggplot2)
+library(zoo)
+library(dplyr)
+library(tidyr)
+
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
 tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
 
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
+
+tmk <- tmk %>%
+  group_by(STATION_ID)%>%
+  mutate(datum = as.Date(datum)) %>%
+  complete(datum = seq.Date(min(datum), max(datum), by="day"))
+
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
 
+tmk$gap_fill <- rollapply(
+  data    = tmk$WERT,
+  width   = 4,
+  FUN     = function(x) mean(x, na.rm=TRUE), 
+  fill    = NA,
+  align   = "center",
+  partial=TRUE
+)
 
+tmk <- tmk %>%
+  mutate(WERT = coalesce(WERT, gap_fill))
 
-# fill gaps
-for(i in unique(tmk$STATION_ID)){
-  data <- subset(tmk, tmk$STATION_ID==i & tmk$year==2017)
-  if(diff(data$doy) != 1){
-    doy_vec <- c(1:365)
-    
-  }
-}
-
+tmk <- tmk %>%
+  group_by(STATION_ID) %>%
+  filter(!any(is.nan(WERT)))
 
 tt_model <- function(statid, 
                      t_day, 
@@ -82,23 +96,38 @@ SOS_TT <- tt_model(statid=tmk$STATION_ID,
                    year = tmk$year,
                    doy= tmk$doy)
 
-
-
+############################################################################
+# load and merge SOS estimates from RS 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-
-pheno_rs <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
+results_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
 results_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE, sep=",")
-pheno_rs <- merge(pheno_rs, SOS_TT, by="stat_id", all.x=TRUE)
+pheno_rs <- merge(results_evi[, c("sp", "b4","stat_id", "X", "Y")], SOS_TT, by="stat_id", all.x=TRUE)
+colnames(pheno_rs) <- c("stat_id", "GAM_EVI","LOG_EVI","X","Y","TT" )
+pheno_rs <- merge(results_ndvi[, c("sp", "b4","stat_id")], pheno_rs, by="stat_id", all.x=TRUE)
+colnames(pheno_rs)[c(2:3)] <- c("GAM_NDVI","LOG_NDVI")
 
-cor.test(pheno_rs$b4, pheno_rs$TT, use="complete.obs")
-cor.test(pheno_rs$sp, pheno_rs$TT, use="complete.obs")
+# correlation 
+cor.test(pheno_rs$GAM_NDVI, pheno_rs$TT, use="complete.obs")
+cor.test(pheno_rs$LOG_NDVI, pheno_rs$TT, use="complete.obs")
 
-pheno_rs$diff_GAM_TT <- abs(pheno_rs$sp - pheno_rs$TT)
-pheno_rs$diff_LOG_TT <- abs(pheno_rs$b4 - pheno_rs$TT)
+cor.test(pheno_rs$GAM_EVI, pheno_rs$TT, use="complete.obs")
+cor.test(pheno_rs$LOG_EVI, pheno_rs$TT, use="complete.obs")
 
-mean(pheno_rs$diff_GAM_TT, na.rm = TRUE)
-mean(pheno_rs$diff_LOG_TT, na.rm = TRUE)
+# difference (residuals)
+pheno_rs$diff_GAM_EVI_TT <- abs(pheno_rs$GAM_EVI - pheno_rs$TT)
+pheno_rs$diff_LOG_EVI_TT <- abs(pheno_rs$LOG_EVI - pheno_rs$TT)
 
+pheno_rs$diff_GAM_NDVI_TT <- abs(pheno_rs$GAM_NDVI - pheno_rs$TT)
+pheno_rs$diff_LOG_NDVI_TT <- abs(pheno_rs$LOG_NDVI - pheno_rs$TT)
+
+# mean difference 
+mean(pheno_rs$diff_GAM_EVI_TT, na.rm = TRUE)
+mean(pheno_rs$diff_LOG_EVI_TT, na.rm = TRUE)
+
+mean(pheno_rs$diff_GAM_NDVI_TT, na.rm = TRUE)
+mean(pheno_rs$diff_LOG_NDVI_TT, na.rm = TRUE)
+
+# Percentiles
 quantile(pheno_rs$TT, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 
