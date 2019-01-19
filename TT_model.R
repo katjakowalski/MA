@@ -18,6 +18,8 @@ tmk <- tmk %>%
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
 
+tmk <- subset(tmk, tmk$year == 2017 & tmk$doy <= 196)
+
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
   width   = 4,
@@ -52,7 +54,7 @@ tt_model <- function(statid,
   for( i in unique(data$statid)){
     #print(paste(i))
     d = subset(data, data$statid == i & data$year == 2017)
-    if(length(d$doy) >= 330){
+    #if(length(d$doy) >= 330){
   
       forcing <- 0
       k <- k +1
@@ -83,8 +85,8 @@ tt_model <- function(statid,
         #out2 <- data.frame(i, 0)
         #SOS_TT <- rbind(SOS_TT, out2)
       }
-    }
-    else{print(paste("obs", i))}
+    #}
+    #else{print(paste("obs", i))}
   }
     return(SOS_TT)
 }
@@ -114,11 +116,11 @@ cor.test(pheno_rs$GAM_EVI, pheno_rs$TT, use="complete.obs")
 cor.test(pheno_rs$LOG_EVI, pheno_rs$TT, use="complete.obs")
 
 # difference (residuals)
-pheno_rs$diff_GAM_EVI_TT <- abs(pheno_rs$GAM_EVI - pheno_rs$TT)
-pheno_rs$diff_LOG_EVI_TT <- abs(pheno_rs$LOG_EVI - pheno_rs$TT)
+pheno_rs$diff_GAM_EVI_TT <- pheno_rs$TT - pheno_rs$GAM_EVI
+pheno_rs$diff_LOG_EVI_TT <- pheno_rs$TT - pheno_rs$LOG_EVI
 
-pheno_rs$diff_GAM_NDVI_TT <- abs(pheno_rs$GAM_NDVI - pheno_rs$TT)
-pheno_rs$diff_LOG_NDVI_TT <- abs(pheno_rs$LOG_NDVI - pheno_rs$TT)
+pheno_rs$diff_GAM_NDVI_TT <- pheno_rs$TT - pheno_rs$GAM_NDVI 
+pheno_rs$diff_LOG_NDVI_TT <- pheno_rs$TT - pheno_rs$LOG_NDVI 
 
 # mean difference 
 mean(pheno_rs$diff_GAM_EVI_TT, na.rm = TRUE)
@@ -131,9 +133,11 @@ mean(pheno_rs$diff_LOG_NDVI_TT, na.rm = TRUE)
 quantile(pheno_rs$TT, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 
+pheno_rs <- pheno_rs[!is.na(pheno_rs$TT),]
 
+write.csv(pheno_rs, file="20190119_TT_LSP_results.csv",row.names = FALSE )
 
-
-
+max(pheno_rs$TT)
+# correlation difference with elevation ? 
 
 

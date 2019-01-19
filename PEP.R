@@ -4,7 +4,7 @@ data_PEP <- read.csv(file="PEP725_Kowalski.csv", header=TRUE, sep=";")
 PEP_stats <- read.csv(file="PEP_DWD_stat.csv", header=TRUE, sep=",")
 
 PEP_SOS <- subset(data_PEP, data_PEP$phase_id==11)
-PEP_SOS <- PEP_SOS[ PEP_SOS$genus %in% c("Fagus","Quercus"), ]
+#PEP_SOS <- PEP_SOS[ PEP_SOS$genus %in% c("Fagus","Quercus"), ]
 
 colnames(PEP_SOS)[1] <- "PEP_ID"
 
@@ -25,9 +25,11 @@ cor.test(pheno_rs$b4,
          pheno_rs$day, use="complete.obs")
 
 ggplot(data=pheno_rs)+
-  geom_point(aes(x=day, y=sp))
+  geom_point(aes(x=day, y=sp))+
+  geom_abline(intercept = 0, slope = 1)+
+  coord_equal()
 
 ggplot(data=pheno_rs)+
   geom_histogram(aes(x=day), alpha=1/2, binwidth=1)+
-  geom_histogram(aes(x=b4), binwidth=1, fill="red", alpha=1/3)
+  geom_histogram(aes(x=sp), binwidth=1, fill="red", alpha=1/3)
 
