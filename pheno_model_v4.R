@@ -118,7 +118,7 @@ pheno_model <- function(plotid,
       
       fit_sp <- tryCatch(gam(index ~ s(doy, sp = 0.005),method="REML", data = dat), error = function(e) return(NA))
       
-      # 1st derivative to estimate slope 
+      # approximation of 1st derivative using finite differences 
       
       if(class(fit_sp) == "gam"){
         
@@ -202,11 +202,11 @@ pheno_model <- function(plotid,
 ####################################################################
 
 ptm <- proc.time()
-pheno_result_evi_k <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
+pheno_result_evi <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
 (proc.time() - ptm) / 60
 
 ptm <- proc.time()
-pheno_result_ndvi_ <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
+pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
 (proc.time() - ptm) / 60
 ####################################################################
 
@@ -247,6 +247,7 @@ quantile(results_evi$sp, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))
 
+
 # differences between indices (sample)
 results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id")], 
                     results_evi[, c("plotid","b4","sp")], 
@@ -274,21 +275,24 @@ compl_evi <- results_evi[completeVec, ]
 compl_evi$plotid <- NULL
 mean_evi <- aggregate(. ~ stat_id, data=compl_evi, mean)
 
-
-# completeVec <- complete.cases(results_evi[, c("sp")])
-# compl_evi_gam <- results_evi[completeVec, ]
-# compl_evi_gam$plotid <- NULL
-# mean_evi_gam <- aggregate(. ~ stat_id, data=compl_evi_gam, mean)
-# 
-# completeVec <- complete.cases(results_evi[, c("b4")])
-# compl_evi_log <- results_evi[completeVec, ]
-# compl_evi_log$plotid <- NULL
-# mean_evi_log <- aggregate(. ~ stat_id, data=compl_evi_log[, c("b4", "stat_id", "observations", "MSE_gam")], mean)
-
 completeVec <- complete.cases(results_ndvi[, c("sp","b4")])
 compl_ndvi <- results_ndvi[completeVec, ]
 compl_ndvi$plotid <- NULL
 mean_ndvi <- aggregate(. ~ stat_id, data=compl_ndvi, mean)
+
+# no. of sample fits for each station
+px_station_evi <- data.frame(table(compl_evi$stat_id))
+px_station_ndvi <- data.frame(table(compl_ndvi$stat_id))
+
+median(px_station_evi$Freq)
+mean(px_station_ndvi$Freq)
+
+px_station <- merge(px_station_evi, px_station_ndvi, by="Var1")
+colnames(px_station) <- c("stat_id", "Freq_EVI", "Freq_NDVI")
+px_stat <- melt(px_station,id.vars="stat_id")
+
+ggplot(px_stat)+
+  geom_boxplot(aes(y=value, fill=variable))
 
 # model differnces (station)
 mean_evi$diff_station <- abs(mean_evi$sp - mean_evi$b4)

@@ -34,6 +34,10 @@ tmk <- tmk %>%
   group_by(STATION_ID) %>%
   filter(!any(is.nan(WERT)))
 
+tmk <- tmk %>%
+  group_by(STATION_ID) %>%
+  filter(length(STATION_ID) == 196)
+
 colnames(tmk)[1] <- "stat_id"
 
 # load SOS data 
@@ -54,86 +58,78 @@ data_PEP <- merge(tmk, PEP_SOS, by.x="stat_id", by.y="DWD_ID")
 
 ###########################################################################################
 
-tt_LSP <- function(statid, 
+tt_GDD <- function(statid, 
                      t_day, 
                      year,
                      doy,
                      t_base=5,
-                     t_crit) {
+                     doy_crit) {
   
   data = data.frame(statid, 
                     t_day,
                     year, 
                     doy,
-                    t_crit)
+                    doy_crit)
   
   SOS_LSP <- NULL
   
   for( i in unique(data$statid)){   # loop through plots 
     
-    d = subset(data, data$statid == i & data$year == 2017)
-    
-      F_crit <- d$t_crit[1]
-      forcing <- 0
+    d = subset(data, data$statid == i)
+    doy_crit <- d$doy_crit[1]
+    d = subset(d, d$doy <= doy_crit)
+    forcing <- 0
       
-      for(x in d$doy){              # loop through days 
+    for(x in d$doy){              # loop through days until SOS
         
-        out <- NULL
-        dat <- subset(d, d$doy == x)
-        doy_sos <- dat$doy
-        t <- dat$t_day
-  
-        if (t > t_base){
-          val = t-t_base
-          forcing = forcing + val 
-        }
-
-        
-        if (forcing >= F_crit){
-          out <- data.frame("stat_id" = i, 
-                            "GDD_PEP" = forcing)
-          SOS_LSP <- rbind(SOS_LSP, out)
-          break 
-        }
+      out <- NULL
+      dat <- subset(d, d$doy == x)
+      doy_sos <- dat$doy
+      t <- dat$t_day
+      
+      if (t > t_base){
+        val = t-t_base
+        forcing = forcing + val 
       }
-      if (is.null(out)){
-        print(paste(i))
-      }
+    }
+    out <- data.frame("stat_id" = i, 
+                      "GDD_PEP" = forcing)
+    SOS_LSP <- rbind(SOS_LSP, out)
   }
   return(SOS_LSP)
 }
 
 ###########################################################################################
 
-GDD_GAM_EVI <- tt_LSP(statid=data$stat_id, 
+GDD_GAM_EVI <- tt_GDD(statid=data$stat_id, 
                    t_day=data$WERT,
                    year = data$year,
                    doy= data$doy,
-                   t_crit = data$GAM_EVI)
+                   doy_crit = data$GAM_EVI)
 
-GDD_LOG_EVI <- tt_LSP(statid=data$stat_id, 
+GDD_LOG_EVI <- tt_GDD(statid=data$stat_id, 
                       t_day=data$WERT,
                       year = data$year,
                       doy= data$doy,
-                      t_crit = data$LOG_EVI)
+                      doy_crit = data$LOG_EVI)
 
-GDD_LOG_NDVI <- tt_LSP(statid=data$stat_id, 
+GDD_LOG_NDVI <- tt_GDD(statid=data$stat_id, 
                       t_day=data$WERT,
                       year = data$year,
                       doy= data$doy,
-                      t_crit = data$LOG_NDVI)
+                      doy_crit = data$LOG_NDVI)
 
-GDD_GAM_NDVI <- tt_LSP(statid=data$stat_id, 
+GDD_GAM_NDVI <- tt_GDD(statid=data$stat_id, 
                       t_day=data$WERT,
                       year = data$year,
                       doy= data$doy,
-                      t_crit = data$GAM_NDVI)
+                      doy_crit = data$GAM_NDVI)
 
-GDD_PEP <- tt_LSP(statid=data_PEP$stat_id, 
+GDD_PEP <- tt_GDD(statid=data_PEP$stat_id, 
                       t_day=data_PEP$WERT,
                       year = data_PEP$year,
                       doy= data_PEP$doy,
-                      t_crit = data_PEP$day)
+                      doy_crit = data_PEP$day)
 ###########################################################################################
 
 GDD_SOS <- merge(GDD_GAM_EVI, GDD_LOG_EVI, by="stat_id")
@@ -149,6 +145,12 @@ GDD_SOS <- merge(GDD_SOS, LSP_ndvi[, c("LOG_NDVI", "GAM_NDVI", "stat_id")], by="
 
 write.csv(GDD_SOS, file="20190119_TT_GDD_results.csv",row.names = FALSE )
 
+# mean GDD 
+mean(GDD_SOS$GDD_GAM_EVI)
+mean(GDD_SOS$GDD_LOG_EVI)
+mean(GDD_SOS$GDD_GAM_NDVI)
+mean(GDD_SOS$GDD_LOG_NDVI)
+
 # correlation of models, same index 
 cor.test(GDD_SOS$GDD_GAM_EVI, GDD_SOS$GDD_LOG_EVI, use="complete.obs")
 cor.test(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$GDD_LOG_NDVI, use="complete.obs")
@@ -157,17 +159,17 @@ cor.test(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$GDD_LOG_NDVI, use="complete.obs")
 cor.test(GDD_SOS$GDD_GAM_EVI, GDD_SOS$GDD_GAM_NDVI, use="complete.obs")
 cor.test(GDD_SOS$GDD_LOG_EVI, GDD_SOS$GDD_LOG_NDVI, use="complete.obs")
 
-
 # plot histogram of all GDD estimates
-
 pl_GDD_EVI <- melt(GDD_SOS[, c("GDD_GAM_EVI", "GDD_LOG_EVI", "GDD_PEP")])
 pl_GDD_NDVI <- melt(GDD_SOS[, c("GDD_GAM_NDVI", "GDD_LOG_NDVI", "GDD_PEP")])
+pl_GDD <- rbind(pl_GDD_EVI, pl_GDD_NDVI)
+
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190119_GDD_EVI_histogram.png", 
     width= 1200, height=1000, res=200 )
 ggplot(data=pl_GDD_EVI)+
   geom_histogram(aes(x=value, fill=variable), 
-                 binwidth=2, 
+                 binwidth=5, 
                  alpha=1/2,
                  position="identity")+
   labs(x="GDD", title="TT Model EVI")
@@ -178,11 +180,17 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/201
     width= 1200, height=1000, res=200 )
 ggplot(data=pl_GDD_NDVI)+
   geom_histogram(aes(x=value, fill=variable), 
-                 binwidth=2, 
+                 binwidth=5, 
                  alpha=1/2,
                  position="identity")+
   labs(x="GDD", title="TT Model NDVI")
 dev.off()
 
-
-
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190120_GDD_boxplot.png", 
+    width= 1400, height=1000, res=200 )
+ggplot(data=pl_GDD)+
+  geom_boxplot(aes(y=value, x=variable, fill=variable))+
+  scale_x_discrete(labels=c("GAM_EVI","LOG_EVI","PEP","GAM_NDVI","LOG_NDVI"))+
+  theme(legend.position="none")+
+  labs(x=" ", y="GDD")
+dev.off()

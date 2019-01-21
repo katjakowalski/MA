@@ -105,7 +105,7 @@ results_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
 results_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE, sep=",")
 pheno_rs <- merge(results_evi[, c("sp", "b4","stat_id", "X", "Y")], SOS_TT, by="stat_id", all.x=TRUE)
 colnames(pheno_rs) <- c("stat_id", "GAM_EVI","LOG_EVI","X","Y","TT" )
-pheno_rs <- merge(results_ndvi[, c("sp", "b4","stat_id")], pheno_rs, by="stat_id", all.x=TRUE)
+pheno_rs <- merge(results_ndvi[, c("sp", "b4","stat_id")], pheno_rs, by="stat_id", all.y=TRUE)
 colnames(pheno_rs)[c(2:3)] <- c("GAM_NDVI","LOG_NDVI")
 
 # correlation 
@@ -135,9 +135,31 @@ quantile(pheno_rs$TT, na.rm=TRUE, c(.05, .50,  .75, .95))
 
 pheno_rs <- pheno_rs[!is.na(pheno_rs$TT),]
 
-write.csv(pheno_rs, file="20190119_TT_LSP_results.csv",row.names = FALSE )
 
-max(pheno_rs$TT)
-# correlation difference with elevation ? 
+# correlation difference & east-west
+pheno_ew <- subset(pheno_rs, pheno_rs$DEM < 450)
+cor.test(pheno_ew$diff_GAM_EVI_TT, pheno_ew$X, use="complete.obs")
+
+cor.test(pheno_rs$diff_LOG_EVI_TT, pheno_rs$X, use="complete.obs")
+cor.test(pheno_rs$diff_LOG_NDVI_TT, pheno_rs$X, use="complete.obs")
+cor.test(pheno_rs$diff_GAM_NDVI_TT, pheno_rs$X, use="complete.obs")
+
+
+ggplot(pheno_rs)+
+  geom_point(aes(x=diff_GAM_EVI_TT, y=X))
+
+
+
+# correlation difference & elevation (DEM), 
+setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd")
+stations <- read.csv(file="20190120_stations_dwd.csv", header=TRUE, sep=",")
+pheno_rs <- merge(pheno_rs, stations[, c("DEM","proxartifi", "prox_undis", "LC", "Stations_i")], by.x="stat_id", by.y="Stations_i")
+
+pheno_DEM <- subset(pheno_rs, pheno_rs$DEM > 475)
+
+cor.test(pheno_DEM$diff_GAM_EVI_TT, pheno_DEM$DEM, use="complete.obs")
+
+cor.test(pheno_rs$diff_GAM_EVI_TT, pheno_rs$proxartifi, use="complete.obs")
+
 
 
