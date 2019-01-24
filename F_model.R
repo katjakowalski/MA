@@ -11,7 +11,7 @@ tmk <- tmk %>%
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
 
-#tmk <- subset(tmk,  tmk$datum >= "2016-09-01" & tmk$datum <= "2017-05-01")
+tmk <- subset(tmk,  tmk$datum >= "2016-09-01" )
 
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
@@ -144,24 +144,31 @@ mean(is.na(SOS_CD$CD))
 pheno_rs <- merge(pheno_rs, SOS_CD, by="stat_id", all.x=TRUE)
 
 # correlation
-cor.test(pheno_rs$b4, pheno_rs_cd$CD, use="complete.obs")
-cor.test(pheno_rs$sp, pheno_rs_cd$CD, use="complete.obs")
+cor.test(pheno_rs$GAM_EVI, pheno_rs_cd$CD, use="complete.obs")
+cor.test(pheno_rs$LOG_EVI, pheno_rs_cd$CD, use="complete.obs")
 
+cor.test(pheno_rs$GAM_NDVI, pheno_rs_cd$CD, use="complete.obs")
+cor.test(pheno_rs$LOG_NDVI, pheno_rs_cd$CD, use="complete.obs")
+
+# difference CD - SOS
 pheno_rs$diff_GAM_EVI_CD <- pheno_rs$CD - pheno_rs$GAM_EVI
 pheno_rs$diff_LOG_EVI_CD <- pheno_rs$CD - pheno_rs$LOG_EVI 
 
 pheno_rs$diff_GAM_NDVI_CD <- pheno_rs$CD - pheno_rs$GAM_NDVI
 pheno_rs$diff_LOG_NDVI_CD <- pheno_rs$CD - pheno_rs$LOG_NDVI 
 
-pheno_rs$diff_TT_CD <- pheno_rs$TT - pheno_rs$CD 
-
 mean(pheno_rs$diff_GAM_EVI_CD, na.rm = TRUE)
 mean(pheno_rs$diff_LOG_EVI_CD, na.rm = TRUE)
+
+# difference TT - CD
+pheno_rs$diff_TT_CD <- pheno_rs$TT - pheno_rs$CD 
+
+ggplot(data=pheno_rs)+
+  geom_histogram(aes(x=diff_GAM_EVI_CD))
 
 quantile(pheno_rs_cd$CD, na.rm=TRUE, c(.05, .50,  .95))
 
 write.csv(pheno_rs, file="20190121_PBM_results.csv",row.names = FALSE )
-
 
 ggplot(data=pheno_rs)+
   geom_point(aes(x=TT, y=CD))

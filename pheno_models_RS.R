@@ -88,7 +88,7 @@ data_sub <- rbind(data_sub, df_base)
 #            data = data_sub)
 
 
-fit_spl_evi <- gam(evi~ s(doy, sp=0),method="GCV.Cp", data = data_sub)
+fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
 fit_spl_evi$coefficients
 summary(fit_spl_evi)
 fit_spl_evi$coefficients
@@ -100,7 +100,7 @@ fit_spl_evi$coefficients
 
 
 #data_sub$predict_ndvi <- as.numeric(predict(fit_spl_ndvi))
-data_sub$predict_evi <- as.numeric(predict(fit_spl_evi))
+data_sub$sp0005 <- as.numeric(predict(fit_spl_evi))
 
 
 plot(fit_spl_evi, scale=0, pages=1)
@@ -148,15 +148,16 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam
 ggplot(data= data_sub) +
   geom_point(aes(x = doy, y = evi)) +
   geom_line( aes(x=doy, y= predict_evi), color="red", size=0.8) +
-  geom_line(data = data.frame(doy = 0:174, deriv1 = fd_d1),
-            aes(x = doy, y = (deriv1  *10 *-1)+0.3), color="black")+
+  geom_line(aes(x=doy, y=sp0005), color="blue", size= 0.8)+
+  #geom_line(data = data.frame(doy = 0:174, deriv1 = fd_d1),
+            #aes(x = doy, y = (deriv1  *10 *-1)+0.3), color="black")+
   #geom_point(aes(x=133, y=0.425), size=3, color="red")+
   #geom_vline(xintercept=133, linetype="dotted")+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20),
-        legend.text=element_text(size=18)) +
+  theme(axis.text.x = element_text(size=16, color="black"),
+        axis.text.y = element_text(size=16, color="black"),
+        text = element_text(size=18),
+        legend.text=element_text(size=16)) +
   labs(x="DOY", y="EVI")
 dev.off()
 

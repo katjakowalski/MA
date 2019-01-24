@@ -61,9 +61,9 @@ pheno_model <- function(plotid,
       }
       
       d <- d[!d$doy <= 50,]                              # delete all rows < doy 50
-      
+
       df_base <- d[0,]                                   # create empty df with column names
-      df_base[c(1:50), ] <- rep(NA, ncol(df_base))       # fill 50 rows with NA 
+      df_base[c(1:50), ] <- rep(NA, ncol(df_base))       # fill 50 rows with NA
       df_base$index <- base_index
       df_base$doy <- seq(1,50,1)
       
@@ -210,13 +210,13 @@ pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy
 (proc.time() - ptm) / 60
 ####################################################################
 
-res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[1]]))
-res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi_k[[2]]))
-results_evi <- merge(res_spl_evi[, c(1:9)], res_nls_evi[, c(4,5,7,10)], by="plotid")
+res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi[[1]]))
+res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi[[2]]))
+results_evi <- merge(res_spl_evi_t[, c(1:9)], res_nls_evi[, c(4,5,7,10)], by="plotid")
 
-res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi_[[1]]))
-res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi_[[2]]))
-results_ndvi <- merge(res_spl_ndvi[, c(1:9)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
+res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
+res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
+results_ndvi <- merge(res_spl_ndvi_t[, c(1:9)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
 
 # model differences (sample)
 results_evi$diff_px <- abs(results_evi$sp - results_evi$b4)
@@ -340,6 +340,13 @@ cor.test(mean_results$GAM_NDVI, mean_results$GAM_EVI, use="complete.obs")
 
 mean(mean_results$LOG_diff)
 mean(mean_results$GAM_diff)
+
+# observations & MSE 
+ggplot(data=mean_evi)+
+  geom_point(aes(x=MSE_log*1000, y=observations))
+
+cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
+cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
 
 
 
