@@ -115,7 +115,6 @@ pheno_model <- function(plotid,
       
       #GAM
       
-      
       fit_sp <- tryCatch(gam(index ~ s(doy, sp = 0.005),method="REML", data = dat), error = function(e) return(NA))
       
       # approximation of 1st derivative using finite differences 
@@ -224,6 +223,8 @@ results_ndvi$diff_px <- abs(results_ndvi$sp - results_ndvi$b4)
 
 mean(results_ndvi$diff_px, na.rm=TRUE)
 mean(results_evi$diff_px, na.rm=TRUE)
+
+# change column names 
 
 # write to disk (sample)
 write.csv(results_evi, file = "20190117_results_px_evi.csv", row.names = FALSE)
@@ -346,7 +347,7 @@ ggplot(data=mean_evi)+
   geom_point(aes(x=MSE_log*1000, y=observations))
 
 cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
-cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
+cor.test(mean_ndvi$observations, mean_ndvi$MSE_log, use="complete.obs")
 
 
 

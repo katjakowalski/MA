@@ -45,8 +45,9 @@ colnames(tmk)[1] <- "stat_id"
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/")
 LSP_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE)
 LSP_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE)
-LSP <- merge(LSP_evi[, c("b4", "sp", "stat_id")], LSP_ndvi[, c("b4", "sp", "stat_id")], by="stat_id")
-colnames(LSP) <- c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI", "GAM_NDVI")
+LSP <- merge(LSP_evi[, c("b4", "sp", "stat_id")], LSP_ndvi[, c("b4", "sp", "stat_id","X","Y")], by="stat_id")
+
+colnames(LSP) <- c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI", "GAM_NDVI","X","Y") # remove this
 
 
 # load PEP data
@@ -193,13 +194,15 @@ GDD_SOS <- merge(GDD_SOS, GDD_GAM_NDVI, by="stat_id")
 GDD_SOS <- merge(GDD_SOS, GDD_LOG_NDVI, by="stat_id")
 GDD_SOS <- merge(GDD_SOS, GDD_PEP, by="stat_id", all.x=TRUE)
 
-LSP_evi <- rename(LSP_evi, c("b4"="LOG_EVI","sp"="GAM_EVI"))
-LSP_ndvi <- rename(LSP_ndvi, c("b4"="LOG_NDVI","sp"="GAM_NDVI"))
+# add SOS estimates 
+GDD_SOS <- merge(GDD_SOS, LSP[, c("LOG_EVI", "GAM_EVI", "LOG_NDVI","GAM_NDVI", "stat_id","X","Y")], by="stat_id", all.x=TRUE)
+GDD_SOS <- merge(GDD_SOS, PEP_SOS[, c("DWD_ID","day")], by.x="stat_id",by.y="DWD_ID", all.x=TRUE)
+names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 
-GDD_SOS <- merge(GDD_SOS, LSP_evi[, c("LOG_EVI", "GAM_EVI", "stat_id","X","Y")], by="stat_id", all.x=TRUE)
-GDD_SOS <- merge(GDD_SOS, LSP_ndvi[, c("LOG_NDVI", "GAM_NDVI", "stat_id")], by="stat_id", all.x=TRUE)
+#add differences 
+GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("diff_GAM_EVI_TT","diff_GAM_NDVI_TT","diff_LOG_EVI_TT","diff_LOG_NDVI_TT","TT", "stat_id")], by="stat_id")
 
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190123_TT_GDD_results.csv",row.names = FALSE )
+write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190125_results_complete.csv",row.names = FALSE )
 
 GDD_GAM_EVI_percentile <- subset(GDD_SOS, GDD_GAM_EVI <= quantile(GDD_GAM_EVI, 0.95) & GDD_GAM_EVI >= quantile(GDD_GAM_EVI, 0.05))
 write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )
@@ -207,7 +210,9 @@ write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv"
 GDD_PEP <- GDD_SOS[!is.na(GDD_SOS$GDD_PEP),]
 write.csv(GDD_PEP, file="20190119_TT_GDD_results_PEP.csv",row.names = FALSE )
 
-GDD_SOS <- merge(GDD_SOS, SOS_TT, by="stat_id")
+
+ggplot(GDD_SOS)+
+  geom_boxplot(aes(y=TT))
 
 p1 <- ggplot(data=GDD_SOS, aes(x=diff_GAM_EVI_TT, y=CD_GAM_EVI))+
   geom_point()
@@ -225,10 +230,18 @@ grid.arrange(p1, p2, nrow =2 )
 cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_TT)
 cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_TT)
 
-cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_TT)
-
 cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_TT)
 cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_TT)
+
+# correlation GDD & CD
+cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$GDD_GAM_EVI)
+cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$GDD_LOG_EVI)
+
+cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$GDD_GAM_NDVI)
+cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$GDD_LOG_NDVI)
+
+ggplot(GDD_SOS)+
+  geom_point(aes(CD_LOG_NDVI, GDD_LOG_NDVI))
 
 mean(GDD_SOS$CD_GAM_EVI)
 mean(GDD_SOS$CD_LOG_EVI)
@@ -261,101 +274,88 @@ cor.test(GDD_SOS$GDD_LOG_EVI, GDD_SOS$GDD_LOG_NDVI, use="complete.obs")
 cor.test(GDD_SOS$GDD_GAM_EVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$GDD_PEP, use="complete.obs")
 
-# scatterplot 
+# scatterplot GDD SOS vs. GDD PEP
 
 p1 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_GAM_NDVI, y=GDD_PEP))+
   geom_abline(intercept = 0, slope = 1)+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16),
-        legend.text=element_text(size=14)) 
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12))+
+  scale_x_continuous(limits=c(0,475))+
+  labs( x=expression(GAM[NDVI]), y= "PEP")
 
 p2 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_GAM_EVI, y=GDD_PEP))+
   geom_abline(intercept = 0, slope = 1)+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16),
-        legend.text=element_text(size=14)) 
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
+  scale_x_continuous(limits=c(0,475))+
+  labs( x=expression(GAM[EVI]), y= "PEP")
 
 p3 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_LOG_NDVI, y=GDD_PEP))+
   geom_abline(intercept = 0, slope = 1)+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16),
-        legend.text=element_text(size=14)) 
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
+  scale_x_continuous(limits=c(0,475))+
+  labs( x=expression(LOG[NDVI]), y= "PEP")
 
 p4 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_LOG_EVI, y=GDD_PEP))+
   geom_abline(intercept = 0, slope = 1)+
-  theme(axis.text.x = element_text(size=14, color="black"),
-        axis.text.y = element_text(size=14, color="black"),
-        text = element_text(size=16),
-        legend.text=element_text(size=14)) 
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
+  scale_x_continuous(limits=c(0,475))+
+  labs( x=expression(LOG[EVI]), y= "PEP")
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/2019122_PEP_GDD_x4.png", 
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/2019124_PEP_GDD_x4.png", 
     width= 2000, height=1000, res=200 )
-grid.arrange(p1, p2, p3, p4, nrow = 2)
+grid.arrange(p2, p1, p4, p3, nrow = 2)
 dev.off()
-
-
-px <- ggplot(GDD_SOS)+
-  geom_point(aes(x=GDD_GAM_EVI, y= GDD_LOG_EVI, color=X), size= 2, alpha=3/4)+
-  theme(axis.text.x = element_text(size=14),
-        axis.text.y = element_text(size=14),
-        text = element_text(size=16),
-        legend.text=element_text(size=14))+
-  geom_abline(intercept = 0, slope = 1)
-
-py <-ggplot(GDD_SOS)+
-  geom_point(aes(x=GDD_GAM_NDVI, y= GDD_LOG_NDVI, color=X), size= 2, alpha=3/4)+
-  theme(axis.text.x = element_text(size=14),
-        axis.text.y = element_text(size=14),
-        text = element_text(size=16),
-        legend.text=element_text(size=14))+
-  geom_abline(intercept = 0, slope = 1)
-
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/2019122_EW_gradient_GAM_LOG.png", 
-    width= 2000, height=1000, res=200 )
-grid.arrange(px, py, nrow = 2)
-dev.off()
-
-
 
 # plot histogram of all GDD estimates
 pl_GDD_EVI <- melt(GDD_SOS[, c("GDD_GAM_EVI", "GDD_LOG_EVI", "GDD_PEP")])
 pl_GDD_NDVI <- melt(GDD_SOS[, c("GDD_GAM_NDVI", "GDD_LOG_NDVI", "GDD_PEP")])
 pl_GDD <- rbind(pl_GDD_EVI, pl_GDD_NDVI)
 
-
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190119_GDD_EVI_histogram.png", 
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190119_GDD_EVI_density.png", 
     width= 1200, height=1000, res=200 )
 ggplot(data=pl_GDD_EVI)+
-  geom_histogram(aes(x=value, fill=variable), 
-                 binwidth=5, 
-                 alpha=1/2,
-                 position="identity")+
-  labs(x="GDD", title="TT Model EVI")
+  geom_density(aes(x=value, fill=variable), adjust=0.6, alpha=0.8, position="identity")+
+  labs(x="GDD")+
+  scale_fill_manual(values=c("#1f78b4","grey30","grey70"),labels=c("GAM","LOG","PEP"))+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=14, color="black"),
+        axis.text.y = element_text(size=14, color="black"),
+        text = element_text(size=16),
+        legend.text=element_text(size=14),
+        legend.title = element_blank())+
+  geom_abline(intercept = 0, slope = 1)
 dev.off()
 
+# SOS vs. PEP SOS 
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190119_GDD_NDVI_histogram.png", 
-    width= 1200, height=1000, res=200 )
-ggplot(data=pl_GDD_NDVI)+
-  geom_histogram(aes(x=value, fill=variable), 
-                 binwidth=5, 
-                 alpha=1/2,
-                 position="identity")+
-  labs(x="GDD", title="TT Model NDVI")
-dev.off()
+ggplot(GDD_SOS)+
+  geom_point(aes(x=GAM_EVI, y=PEP_SOS))+
+  geom_abline(aes(intercept=0, slope=1))+
+  coord_equal()+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=14, color="black"),
+        axis.text.y = element_text(size=14, color="black"),
+        text = element_text(size=16),
+        legend.text=element_text(size=14),
+        legend.title = element_blank())
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190120_GDD_boxplot.png", 
-    width= 1400, height=1000, res=200 )
-ggplot(data=pl_GDD)+
-  geom_boxplot(aes(y=value, x=variable, fill=variable))+
-  scale_x_discrete(labels=c("GAM_EVI","LOG_EVI","PEP","GAM_NDVI","LOG_NDVI"))+
-  theme(legend.position="none")+
-  labs(x=" ", y="GDD")
-dev.off()
+

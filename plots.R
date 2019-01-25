@@ -93,47 +93,48 @@ dev.off()
 
 # scatterplot station level
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181204_EVI_station.png", 
-    width= 1200, height=1000, res=200 )
 
-ggplot(mean_evi) + 
+
+p1 <- ggplot(mean_evi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
-  labs(x="SOS (GAM)", y="SOS (LOG)")+
+  labs(x=expression(SOS[GAM]), y=expression(SOS[LOG]))+
   scale_x_continuous(labels=seq(0,350, 20), 
                      breaks= seq(0,350, 20),
                      limits= c(80,160))+
   scale_y_continuous(labels=seq(0,350,20), 
                      breaks=seq(0,350,20),
                      limits= c(80,160))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20),
-        legend.text=element_text(size=18)) +
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
   ggtitle("EVI")
 
-dev.off()
-
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181204_NDVI_station.png", 
-    width= 1200, height=1000, res=200 )
-ggplot(mean_ndvi) + 
+p2 <- ggplot(mean_ndvi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
-  labs(x="SOS (GAM)", y="SOS (LOG)")+
+  labs(x=expression(SOS[GAM]), y=expression(SOS[LOG]))+
   scale_x_continuous(labels=seq(0,350, 20), 
                      breaks= seq(0,350, 20),
                      limits= c(60,160))+
   scale_y_continuous(labels=seq(0,350,20), 
                      breaks=seq(0,350,20),
                      limits= c(60,160))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20),
-        legend.text=element_text(size=18)) +
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
   ggtitle("NDVI")
 
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190124_Model_Index_station.png", 
+    width= 1200, height=1000, res=200 )
+grid.arrange(p1,p2, nrow=1 )
 dev.off()
 
 #scatterplot station level in one
@@ -256,14 +257,28 @@ mean_est_plot$variable <- as.character(mean_est_plot$variable)
 mean_est_plot$variable[mean_est_plot$variable == "b4"] <- "LOG"
 mean_est_plot$variable[mean_est_plot$variable == "sp"] <- "GAM"
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181204_quantiles_stations.png", 
-    width= 1200, height=1000, res=200 )
-ggplot(mean_est_plot, aes(y=value, x=variable, fill=Index )) +
-  stat_summary(fun.data = f, geom="boxplot", position=position_dodge())+
-  scale_fill_manual(values=c( "royalblue2", "grey28"))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20))+
+plot_SOS <- GDD_SOS[, c("GAM_EVI","GAM_NDVI", "LOG_EVI", "LOG_NDVI", "TT", "PEP_SOS")]
+plot_SOS <- melt(plot_SOS)
+plot_SOS$index[plot_SOS$variable == "LOG_EVI" |  plot_SOS$variable== "GAM_EVI"] <- "EVI"
+plot_SOS$index[plot_SOS$variable == "LOG_NDVI" |  plot_SOS$variable== "GAM_NDVI"] <- "NDVI"
+plot_SOS$variable <- as.character(plot_SOS$variable)
+plot_SOS$variable[plot_SOS$variable == "LOG_EVI" |  plot_SOS$variable== "LOG_NDVI"] <- "LOG"
+plot_SOS$variable[plot_SOS$variable == "GAM_EVI" |  plot_SOS$variable== "GAM_NDVI"] <- "GAM"
+plot_SOS$variable[plot_SOS$variable == "PEP_SOS"] <- "PEP"
+
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190125_boxplot_stations.png", 
+    width= 900, height=700, res=200 )
+ggplot(plot_SOS, aes(y=value, x=variable, fill=index )) +
+  geom_boxplot(varwidth=TRUE)+
+  scale_fill_manual(values=c( "royalblue2", "grey45"),
+                    labels = c("EVI", "NDVI", " "))+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.title=element_blank(),
+        panel.grid.major.x = element_blank())+
   labs(x="Model", y="SOS")
 dev.off()
 
