@@ -5,12 +5,12 @@ library(tidyverse)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
-# data <- read.csv(header=TRUE, sep=",", file= "dwd_reflectance_samples.csv") 
+data_orig <- read.csv(header=TRUE, sep=",", file= "dwd_reflectance_samples.csv") 
+length(unique(data_orig$plotid))
 # data_x0059_y0056 <- read.csv(header=TRUE, sep=",", file="dwd_reflectance_samples_X0059_Y0056_20170917_LEVEL2_SEN2A.csv" )
-# 
-# data <- data[!(data$blue == 0 & data$green== 0 & data$red== 0 & data$nir==0 & data$swir1==0 & data$swir2 == 0 ),]
+#
 # data <- rbind(data, data_x0059_y0056)
-# 
+#
 # write.csv(data, file = "data_20181024.csv", row.names = FALSE)
 
 data <- read.csv(header=TRUE, sep=",", file="data_20181024.csv")

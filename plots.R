@@ -92,9 +92,6 @@ dev.off()
 
 
 # scatterplot station level
-
-
-
 p1 <- ggplot(mean_evi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
   coord_equal()+
@@ -102,16 +99,17 @@ p1 <- ggplot(mean_evi) +
   labs(x=expression(SOS[GAM]), y=expression(SOS[LOG]))+
   scale_x_continuous(labels=seq(0,350, 20), 
                      breaks= seq(0,350, 20),
-                     limits= c(80,160))+
+                     limits= c(60,160))+
   scale_y_continuous(labels=seq(0,350,20), 
                      breaks=seq(0,350,20),
-                     limits= c(80,160))+
+                     limits= c(60,160))+
   theme_bw()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
         legend.text=element_text(size=12)) +
-  ggtitle("EVI")
+  ggtitle("EVI")+
+  annotate("text", x=150, y=63, label= "r=0.88", size=4.3) 
 
 p2 <- ggplot(mean_ndvi) + 
   geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
@@ -129,11 +127,11 @@ p2 <- ggplot(mean_ndvi) +
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
         legend.text=element_text(size=12)) +
-  ggtitle("NDVI")
-
+  ggtitle("NDVI")+
+  annotate("text", x=150, y=63, label= "r=0.84", size=4.3) 
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190124_Model_Index_station.png", 
-    width= 1200, height=1000, res=200 )
+    width= 1200, height=800, res=200 )
 grid.arrange(p1,p2, nrow=1 )
 dev.off()
 
@@ -227,35 +225,7 @@ ggplot(data=model_fits)+
 
 dev.off()
 
-# percentiles SOS station
-
-f <- function(x) {
-  r <- quantile(x, probs = c(0.05, 0.25, 0.5, 0.75, 0.95))
-  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
-  r
-}
-
-quantile(mean_evi$sp, probs = c(0.05, 0.5, 0.95))
-quantile(mean_ndvi$sp, probs = c(0.05, 0.5, 0.95))
-quantile(mean_evi$b4, probs = c(0.05, 0.5, 0.95))
-quantile(mean_ndvi$b4, probs = c(0.05, 0.5, 0.95))
-mean(mean_evi$MSE_gam)
-mean(mean_ndvi$MSE_gam)
-mean(mean_evi$MSE_log)
-mean(mean_ndvi$MSE_log)
-
-mean_est_evi <- mean_evi[, c("b4","sp")]
-mean_est_evi <- melt(mean_est_evi)
-mean_est_evi$Index <- "EVI"
-
-mean_est_ndvi <- mean_ndvi[, c("b4","sp")]
-mean_est_ndvi <- melt(mean_est_ndvi)
-mean_est_ndvi$Index <- "NDVI"
-
-mean_est_plot <- merge(mean_est_evi, mean_est_ndvi, all=TRUE)
-mean_est_plot$variable <- as.character(mean_est_plot$variable)
-mean_est_plot$variable[mean_est_plot$variable == "b4"] <- "LOG"
-mean_est_plot$variable[mean_est_plot$variable == "sp"] <- "GAM"
+# percentiles SOS plot
 
 plot_SOS <- GDD_SOS[, c("GAM_EVI","GAM_NDVI", "LOG_EVI", "LOG_NDVI", "TT", "PEP_SOS")]
 plot_SOS <- melt(plot_SOS)
