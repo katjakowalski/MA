@@ -65,10 +65,7 @@ data_LOG_NDVI <- data_input[!is.na(data_input$LOG_NDVI), ]
 
 data_PEP <- merge(tmk, PEP_SOS, by.x="stat_id", by.y="DWD_ID", all.y=TRUE)
 
-ggplot(subset(tmk, tmk$year==2017 & tmk$stat_id==1503))+
-  geom_point(aes(x=datum, y=WERT))
 
-sub <- subset(tmk, tmk$stat_id==760)
 ###########################################################################################
 
 tt_GDD <- function(statid, 
@@ -209,7 +206,8 @@ names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 #add differences 
 GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("diff_GAM_EVI_TT","diff_GAM_NDVI_TT","diff_LOG_EVI_TT","diff_LOG_NDVI_TT","TT", "stat_id")], by="stat_id")
 
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190126_results_complete.csv",row.names = FALSE )
+GDD_stations <- GDD_SOS[!is.na(GDD_SOS$GDD_GAM_EVI),]
+write.csv(GDD_stations, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190127_GDD_stations.csv",row.names = FALSE )
 
 #GDD_GAM_EVI_percentile <- subset(GDD_SOS, GDD_GAM_EVI <= quantile(GDD_GAM_EVI, 0.95) & GDD_GAM_EVI >= quantile(GDD_GAM_EVI, 0.05))
 #write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )
@@ -403,6 +401,33 @@ p4 <- ggplot(GDD_SOS)+
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190126_PEP_LSP_4x.png", 
     width= 1200, height=800, res=200 )
 grid.arrange(p1,p2,p3,p4, nrow=2)
+dev.off()
+
+
+
+plot_GDD <- GDD_SOS[, c("GDD_GAM_EVI","GDD_GAM_NDVI", "GDD_LOG_EVI", "GDD_LOG_NDVI","GDD_PEP")]
+plot_GDD <- melt(plot_GDD)
+plot_GDD$index[plot_GDD$variable == "GDD_LOG_EVI" |  plot_GDD$variable== "GDD_GAM_EVI"] <- "EVI"
+plot_GDD$index[plot_GDD$variable == "GDD_LOG_NDVI" |  plot_GDD$variable== "GDD_GAM_NDVI"] <- "NDVI"
+plot_GDD$variable <- as.character(plot_GDD$variable)
+plot_GDD$variable[plot_GDD$variable == "GDD_LOG_EVI" |  plot_GDD$variable== "GDD_LOG_NDVI"] <- "LOG"
+plot_GDD$variable[plot_GDD$variable == "GDD_GAM_EVI" |  plot_GDD$variable== "GDD_GAM_NDVI"] <- "GAM"
+plot_GDD$variable[plot_GDD$variable == "GDD_PEP"] <- "PEP"
+
+
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190127_boxplot_GDD.png", 
+    width= 900, height=700, res=200 )
+ggplot(plot_GDD, aes(y=value, x=variable, fill=index )) +
+  geom_boxplot(varwidth=TRUE)+
+  scale_fill_manual(values=c( "royalblue2", "grey45"),
+                    labels = c("EVI", "NDVI", " "))+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.title=element_blank(),
+        panel.grid.major.x = element_blank())+
+  labs(x="Model", y="GDD")
 dev.off()
 
 cor.test(GDD_SOS$GAM_EVI, GDD_SOS$PEP_SOS)

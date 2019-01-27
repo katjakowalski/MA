@@ -139,11 +139,11 @@ mean(SOS_TT$diff_LOG_NDVI_TT, na.rm = TRUE)
 
 # plot_diff <- melt(SOS_TT[, c("diff_GAM_NDVI_TT", "diff_LOG_NDVI_TT")])
 # 
-# png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190122_Differences_TT_NDVI.png", 
+# png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190122_Differences_TT_NDVI.png",
 #     width= 1200, height=1000, res=200 )
 # ggplot(data=plot_diff)+
 #   geom_histogram(aes(x=value, fill=variable),
-#                  binwidth=1, 
+#                  binwidth=1,
 #                  alpha=1/2,
 #                  position="identity")+
 #   scale_fill_manual(values=c("black","blue"))+

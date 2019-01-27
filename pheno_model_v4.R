@@ -9,8 +9,21 @@ library(reshape2)
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
 data <- read.csv(header=TRUE, sep=",", file="data_clear.csv")
+
+data <- subset(data, dwd_stat != 379 & 
+                       dwd_stat != 760 &
+                       dwd_stat != 1503 &
+                       dwd_stat != 2878 &
+                       dwd_stat != 3490 &
+                       dwd_stat != 4878 &
+                       dwd_stat != 5100 &
+                       dwd_stat != 5715)
+
 data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
+
+length(unique(data$plotid))
+
 
 #################################################################################
 
@@ -207,11 +220,11 @@ pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy
 
 res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi[[1]]))
 res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi[[2]]))
-results_evi <- merge(res_spl_evi_t[, c(1:9)], res_nls_evi[, c(4,5,7,10)], by="plotid")
+results_evi <- merge(res_spl_evi[, c(1:8)], res_nls_evi[, c(4,5,7,10)], by="plotid")
 
 res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
 res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
-results_ndvi <- merge(res_spl_ndvi_t[, c(1:9)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
+results_ndvi <- merge(res_spl_ndvi[, c(1:8)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
 
 # model differences (sample)
 results_evi$diff_px <- abs(results_evi$sp - results_evi$b4)
@@ -249,6 +262,7 @@ quantile(results_evi$sp, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))
 
+length(unique(results_px$stat_id))
 
 # differences between indices (sample)
 results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id")], 
