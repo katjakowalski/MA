@@ -17,12 +17,13 @@ data <- subset(data, dwd_stat != 379 &
                        dwd_stat != 3490 &
                        dwd_stat != 4878 &
                        dwd_stat != 5100 &
-                       dwd_stat != 5715)
+                       dwd_stat != 5715 &
+                       dwd_stat != 1550 &
+                       dwd_stat != 3679 &
+                       dwd_stat != 7424)
 
 data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
-
-length(unique(data$plotid))
 
 
 #################################################################################
@@ -233,17 +234,15 @@ results_ndvi$diff_px <- abs(results_ndvi$sp - results_ndvi$b4)
 mean(results_ndvi$diff_px, na.rm=TRUE)
 mean(results_evi$diff_px, na.rm=TRUE)
 
-# change column names 
-
 
 # write to disk (sample)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-#write.csv(results_evi, file = "20190117_results_px_evi.csv", row.names = FALSE)
-#write.csv(results_ndvi, file = "20190117_results_px_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "20190128_results_px_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20190128_results_px_ndvi.csv", row.names = FALSE)
 
-results_evi <- read.csv("20190117_results_px_evi.csv")
-results_ndvi <- read.csv("20190117_results_px_ndvi.csv")
+#results_evi <- read.csv("20190117_results_px_evi.csv")
+#results_ndvi <- read.csv("20190117_results_px_ndvi.csv")
 ########################################################################
 # Convergence (sample)
 mean(!is.na(results_evi$b4))
@@ -262,7 +261,6 @@ quantile(results_evi$sp, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))
 quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))
 
-length(unique(results_px$stat_id))
 
 # differences between indices (sample)
 results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id")], 
@@ -321,8 +319,13 @@ mean_ndvi <- merge(mean_ndvi, dwd_stations[, c("X", "Y", "Stations_i")], by.x="s
 
 
 # write to disk 
-write.csv(mean_evi, file="20190117_results_stat_evi.csv",row.names = FALSE )
-write.csv(mean_ndvi, file="20190117_results_stat_ndvi.csv",row.names = FALSE )
+write.csv(mean_evi, file="20190128_results_stat_evi.csv",row.names = FALSE )
+write.csv(mean_ndvi, file="20190128_results_stat_ndvi.csv",row.names = FALSE )
+
+# quantiles 0.05-0.95 
+GAM_EVI_quant <- subset(mean_evi, sp <= quantile(sp, 0.95) & sp >= quantile(sp, 0.05))
+#write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )
+hist(GAM_EVI_quant$sp)
 
 ########################################################################
 # mean difference (station)
@@ -344,23 +347,19 @@ cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
 cor.test(mean_evi$b4, mean_evi$sp, use="complete.obs")
 
 # Percentiles (station)
-quantile(mean_evi$b4, na.rm=TRUE, c(.05, .50, .95))
-quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))
-
-quantile(mean_evi$sp, na.rm=TRUE, c(.05, .50, .95))
-quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))
-
+data.frame("LOG_NDVI" = c(quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))),
+            "LOG_EVI"=c(quantile(mean_evi$b4, na.rm=TRUE, c(.05, .50, .95))),
+           "GAM_NDVI" = c(quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))),
+           "GAM_EVI" = c(quantile(mean_evi$sp, na.rm=TRUE, c(.05, .50, .95)))
+           )
 
 # mean SOS and sd
-mean(mean_evi$sp)
-sd(mean_evi$sp)
-mean(mean_evi$b4)
-sd(mean_evi$b4)
 
-mean(mean_ndvi$sp)
-sd(mean_ndvi$sp)
-mean(mean_ndvi$b4, na.rm=TRUE)
-sd(mean_ndvi$b4, na.rm=TRUE)
+data.frame("LOG_NDVI" = c(mean(mean_ndvi$b4, na.rm=TRUE), sd(mean_ndvi$b4, na.rm=TRUE)),
+           "LOG_EVI" = c(mean(mean_evi$b4),sd(mean_evi$b4)),
+           "GAM_NDVI" = c(mean(mean_ndvi$sp),sd(mean_ndvi$sp) ),
+           "GAM_EVI" = c(mean(mean_evi$sp),sd(mean_evi$sp) )
+           )
 
 # differences between indices (station)
 mean_results <- merge(mean_evi[, c("stat_id","b4","sp","observations")], 
@@ -376,8 +375,8 @@ mean(mean_results$LOG_diff, na.rm=TRUE)
 mean(mean_results$GAM_diff, na.rm=TRUE)
 
 # observations & MSE 
-ggplot(data=mean_evi)+
-  geom_point(aes(x=MSE_log*1000, y=observations))
+ggplot(data=mean_ndvi)+
+  geom_point(aes(x=MSE_gam, y=observations))
 
 cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
 cor.test(mean_ndvi$observations, mean_ndvi$MSE_log, use="complete.obs")

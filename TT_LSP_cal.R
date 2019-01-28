@@ -206,8 +206,7 @@ names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 #add differences 
 GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("diff_GAM_EVI_TT","diff_GAM_NDVI_TT","diff_LOG_EVI_TT","diff_LOG_NDVI_TT","TT", "stat_id")], by="stat_id")
 
-GDD_stations <- GDD_SOS[!is.na(GDD_SOS$GDD_GAM_EVI),]
-write.csv(GDD_stations, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190127_GDD_stations.csv",row.names = FALSE )
+write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190128_GDD_SOS.csv",row.names = FALSE )
 
 #GDD_GAM_EVI_percentile <- subset(GDD_SOS, GDD_GAM_EVI <= quantile(GDD_GAM_EVI, 0.95) & GDD_GAM_EVI >= quantile(GDD_GAM_EVI, 0.05))
 #write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )

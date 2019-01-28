@@ -11,7 +11,7 @@ tmk <- tmk %>%
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
 
-tmk <- subset(tmk,  tmk$datum >= "2016-09-01" )
+tmk <- subset(tmk, tmk$datum >= "2016-09-01"  & tmk$datum <= "2017-07-15" )    
 
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
@@ -25,10 +25,12 @@ tmk$gap_fill <- rollapply(
 tmk <- tmk %>%
   mutate(WERT = coalesce(WERT, gap_fill))
 
+# remove all plots with NA
 tmk <- tmk %>%
   group_by(STATION_ID) %>%
   filter(!any(is.nan(WERT)))
 
+colnames(tmk)[1] <- "stat_id"
 
 cd_model <- function(statid, 
                      t_day, 
