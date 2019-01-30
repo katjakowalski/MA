@@ -130,6 +130,8 @@ SOS_TT$diff_LOG_NDVI_TT <- SOS_TT$TT - SOS_TT$LOG_NDVI
 
 # mean difference 
 mean(SOS_TT$diff_GAM_EVI_TT, na.rm = TRUE)
+sd(SOS_TT$diff_GAM_EVI_TT, na.rm=TRUE)
+
 mean(SOS_TT$diff_LOG_EVI_TT, na.rm = TRUE)
 
 mean(SOS_TT$diff_GAM_NDVI_TT, na.rm = TRUE)

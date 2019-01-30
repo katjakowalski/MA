@@ -30,8 +30,8 @@ tmk <- tmk %>%
   group_by(STATION_ID) %>%
   filter(!any(is.nan(WERT)))
 
-colnames(tmk)[1] <- "stat_id"
-
+      
+###################################################################################
 cd_model <- function(statid, 
                      t_day, 
                      year,
@@ -40,17 +40,17 @@ cd_model <- function(statid,
                      f_base= 5,
                      c_base = 5,
                      f_crit = 250,
-                     c_crit = 80) {
+                     c_crit = 64) {
   
   data = data.frame(statid, 
                     t_day,
                     year, 
                     doy,
                     date)
-  
+
   SOS_CD <- NULL
   #k <- 0
-  
+
   for( i in unique(data$statid)){
 
     d_f = subset(data, data$statid == i & data$year == 2017)
@@ -137,30 +137,49 @@ SOS_CD <- cd_model(statid=tmk$STATION_ID,
                    date = tmk$datum)
 
 mean(is.na(SOS_CD$CD))
+mean(GDD_SOS$CD_GAM_EVI)
+mean(GDD_SOS$CD_LOG_EVI)
+mean(GDD_SOS$GDD_GAM_EVI)
+mean(GDD_SOS$GDD_LOG_EVI)
 
 # merge with RS SOS estimates 
-#setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-#pheno_rs_cd <- read.csv(file="20181211_mean_evi.csv", header=TRUE, sep=",")
-#pheno_rs_cd <- merge(pheno_rs_cd, SOS_CD, by="stat_id", all.x=TRUE)
+GDD_SOS <- merge(GDD_SOS, SOS_CD[,c("CD", "stat_id")], by="stat_id", all.x=TRUE)
 
-pheno_rs <- merge(pheno_rs, SOS_CD, by="stat_id", all.x=TRUE)
+test <- subset(GDD_SOS, !is.na(CD))
+
 
 # correlation
-cor.test(pheno_rs$GAM_EVI, pheno_rs_cd$CD, use="complete.obs")
-cor.test(pheno_rs$LOG_EVI, pheno_rs_cd$CD, use="complete.obs")
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$CD, use="complete.obs")
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$CD, use="complete.obs")
 
-cor.test(pheno_rs$GAM_NDVI, pheno_rs_cd$CD, use="complete.obs")
-cor.test(pheno_rs$LOG_NDVI, pheno_rs_cd$CD, use="complete.obs")
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$CD, use="complete.obs")
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$CD, use="complete.obs")
+
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$CD, use="complete.obs")
 
 # difference CD - SOS
-pheno_rs$diff_GAM_EVI_CD <- pheno_rs$CD - pheno_rs$GAM_EVI
-pheno_rs$diff_LOG_EVI_CD <- pheno_rs$CD - pheno_rs$LOG_EVI 
+GDD_SOS$diff_GAM_EVI_CD <- GDD_SOS$CD - GDD_SOS$GAM_EVI
+GDD_SOS$diff_LOG_EVI_CD <- GDD_SOS$CD - GDD_SOS$LOG_EVI 
 
-pheno_rs$diff_GAM_NDVI_CD <- pheno_rs$CD - pheno_rs$GAM_NDVI
-pheno_rs$diff_LOG_NDVI_CD <- pheno_rs$CD - pheno_rs$LOG_NDVI 
+GDD_SOS$diff_GAM_NDVI_CD <- GDD_SOS$CD - GDD_SOS$GAM_NDVI
+GDD_SOS$diff_LOG_NDVI_CD <- GDD_SOS$CD - GDD_SOS$LOG_NDVI 
 
-mean(pheno_rs$diff_GAM_EVI_CD, na.rm = TRUE)
-mean(pheno_rs$diff_LOG_EVI_CD, na.rm = TRUE)
+cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_CD)
+cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_CD)
+cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_CD)
+cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_CD)
+
+mean(GDD_SOS$diff_GAM_EVI_CD, na.rm = TRUE)
+sd(GDD_SOS$diff_GAM_EVI_CD, na.rm=TRUE)
+
+mean(GDD_SOS$diff_LOG_EVI_CD, na.rm = TRUE)
+sd(GDD_SOS$diff_LOG_EVI_CD, na.rm=TRUE)
+
+mean(GDD_SOS$diff_LOG_NDVI_CD, na.rm = TRUE)
+sd(GDD_SOS$diff_LOG_NDVI_CD, na.rm=TRUE)
+
+mean(GDD_SOS$diff_GAM_NDVI_CD, na.rm = TRUE)
+sd(GDD_SOS$diff_GAM_NDVI_CD, na.rm=TRUE)
 
 # difference TT - CD
 pheno_rs$diff_TT_CD <- pheno_rs$TT - pheno_rs$CD 

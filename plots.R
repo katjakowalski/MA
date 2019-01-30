@@ -92,8 +92,8 @@ dev.off()
 
 
 # scatterplot station level
-p1 <- ggplot(mean_evi) + 
-  geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
+p1 <- ggplot(GDD_SOS) + 
+  geom_point(aes(x= GAM_EVI, y=LOG_EVI),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
   labs(x=expression(SOS[GAM]), y=expression(SOS[LOG]))+
@@ -109,10 +109,11 @@ p1 <- ggplot(mean_evi) +
         text = element_text(size=12),
         legend.text=element_text(size=12)) +
   ggtitle("EVI")+
-  annotate("text", x=150, y=63, label= "r=0.88", size=4.3) 
+  annotate("text", x=140, y=68, label= "r = 0.88", size=3.5, hjust=0)+
+  annotate("text", x=140, y=62, label= "p < 0.001", size=3, hjust=0)
 
-p2 <- ggplot(mean_ndvi) + 
-  geom_point(aes(x= sp, y=b4),color="darkblue", alpha=1/5)+
+p2 <- ggplot(GDD_SOS) + 
+  geom_point(aes(x=GAM_NDVI, y=LOG_NDVI),color="darkblue", alpha=1/5)+
   coord_equal()+
   geom_abline(intercept = 0, slope = 1)+
   labs(x=expression(SOS[GAM]), y=expression(SOS[LOG]))+
@@ -128,7 +129,8 @@ p2 <- ggplot(mean_ndvi) +
         text = element_text(size=12),
         legend.text=element_text(size=12)) +
   ggtitle("NDVI")+
-  annotate("text", x=150, y=63, label= "r=0.84", size=4.3) 
+  annotate("text", x=140, y=68, label= "r = 0.83", size=3.5, hjust=0)+
+  annotate("text", x=140, y=62, label= "p < 0.001", size=3, hjust=0)
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190124_Model_Index_station.png", 
     width= 1200, height=800, res=200 )
@@ -237,7 +239,7 @@ plot_SOS$variable[plot_SOS$variable == "GAM_EVI" |  plot_SOS$variable== "GAM_NDV
 plot_SOS$variable[plot_SOS$variable == "PEP_SOS"] <- "PEP"
 
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190125_boxplot_stations.png", 
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190129_boxplot_stations.png", 
     width= 900, height=700, res=200 )
 ggplot(plot_SOS, aes(y=value, x=variable, fill=index )) +
   geom_boxplot(varwidth=TRUE)+
@@ -252,42 +254,6 @@ ggplot(plot_SOS, aes(y=value, x=variable, fill=index )) +
   labs(x="Model", y="SOS")
 dev.off()
 
-# MSE station mean 
-
-MSE <- data.frame(
-  MSE = c(mean(mean_evi$MSE_log)*100,
-          mean(mean_evi$MSE_gam)*100,
-          mean(mean_ndvi$MSE_log)*100,
-          mean(mean_ndvi$MSE_gam)*100),
-  Index = c("EVI", "EVI", "NDVI", "NDVI"),
-  Model = c ("LOG", "GAM", "LOG", "GAM")
-)
-
-GCV_ubre <- data.frame(
-  UBRE = c(mean(mean_evi$GCV_gam)*100,
-          mean(mean_evi$MSE_gam)*100,
-          mean(mean_ndvi$MSE_log)*100,
-          mean(mean_ndvi$MSE_gam)*100),
-  Index = c("EVI", "EVI", "NDVI", "NDVI"),
-  Model = c ("LOG", "GAM", "LOG", "GAM")
-)
-
-
-
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20181204_MSE.png", 
-    width= 1200, height=1000, res=200 )
-
-ggplot(data=MSE)+
-  geom_bar(aes(x= Index, y=MSE, fill=Model), 
-           stat="identity", position = position_dodge2(),
-           width = 0.5)+
-  scale_fill_manual(values=c( "royalblue2", "grey28"))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20))+
-  labs( x="Index", y= "MSE*100")
-
-dev.off()
 
 
 ggplot(data=mean_ndvi)+

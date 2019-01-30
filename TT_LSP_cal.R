@@ -241,9 +241,13 @@ mean(GDD_SOS$CD_LOG_NDVI, na.rm=TRUE)
 
 # mean GDD 
 mean(GDD_SOS$GDD_GAM_EVI, na.rm=TRUE)
+sd(GDD_SOS$GDD_GAM_EVI)
 mean(GDD_SOS$GDD_LOG_EVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_LOG_EVI)
 mean(GDD_SOS$GDD_GAM_NDVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_GAM_NDVI)
 mean(GDD_SOS$GDD_LOG_NDVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_LOG_NDVI, na.rm=TRUE)
 mean(GDD_PEP$GDD_PEP, na.rm=TRUE)
 
 
@@ -261,6 +265,16 @@ cor.test(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_LOG_EVI, GDD_SOS$GDD_PEP, use="complete.obs")
 
+# regression GDD SOS dependent on CD
+
+GAM_EVI <- lm(diff_LOG_EVI_TT ~ CD_LOG_EVI, data=GDD_SOS)
+
+ggplot(data=GDD_SOS)+
+  geom_point(aes(x=diff_GAM_EVI_TT, CD_GAM_EVI))
+
+summary(GAM_EVI)
+
+GDD_SOS$CD_GAM_EVI
 # scatterplot GDD SOS vs. GDD PEP
 
 p1 <- ggplot(GDD_SOS)+
@@ -273,7 +287,10 @@ p1 <- ggplot(GDD_SOS)+
         legend.text=element_text(size=12))+
   scale_x_continuous(limits=c(0,550))+
   labs( x=expression(GAM[NDVI]), y= "PEP")+
-  annotate("text", x=500, y=75, label= "r=0.48", size=4.3) 
+  annotate("text", x=400, y=90, label= "r = 0.48", size=3.5, hjust=0) +
+  annotate("text", x=400, y=65, label= "p < 0.001", size=3, hjust=0)
+
+
 
 p2 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_GAM_EVI, y=GDD_PEP))+
@@ -285,7 +302,8 @@ p2 <- ggplot(GDD_SOS)+
         legend.text=element_text(size=12)) +
   scale_x_continuous(limits=c(0,550))+
   labs( x=expression(GAM[EVI]), y= "PEP")+
-  annotate("text", x=500, y=75, label= "r=0.62", size=4.3) 
+  annotate("text", x=400, y=90, label= "r = 0.62", size=3.5, hjust=0) +
+  annotate("text", x=400, y=65, label= "p < 0.001", size=3, hjust=0)
 
 p3 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_LOG_NDVI, y=GDD_PEP))+
@@ -297,7 +315,8 @@ p3 <- ggplot(GDD_SOS)+
         legend.text=element_text(size=12)) +
   scale_x_continuous(limits=c(0,550))+
   labs( x=expression(LOG[NDVI]), y= "PEP")+
-  annotate("text", x=500, y=75, label= "r=0.68", size=4.3) 
+  annotate("text", x=400, y=90, label= "r = 0.68", size=3.5,hjust=0) +
+  annotate("text", x=400, y=65, label= "p < 0.001", size=3, hjust=0) 
 
 p4 <- ggplot(GDD_SOS)+
   geom_point(aes(x=GDD_LOG_EVI, y=GDD_PEP))+
@@ -309,7 +328,8 @@ p4 <- ggplot(GDD_SOS)+
         legend.text=element_text(size=12)) +
   scale_x_continuous(limits=c(0,550))+
   labs( x=expression(LOG[EVI]), y= "PEP")+
-  annotate("text", x=500, y=75, label= "r=0.74", size=4.3) 
+  annotate("text", x=400, y=90, label= "r = 0.74", size=3.5,hjust=0)  +
+  annotate("text", x=400, y=65, label= "p < 0.001", size=3, hjust=0)
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/2019124_PEP_GDD_x4.png", 
     width= 1200, height=800, res=200 )
