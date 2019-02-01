@@ -14,21 +14,22 @@ slope <- terrain(dem,opt='slope')
 aspect <- terrain(dem,opt='aspect')
 
 
-hs <- hillShade(slope = slope, aspect = aspect, 40,270)
+hs <- hillShade(slope = slope, aspect = aspect, angle=20,direction=30)
+
+levelplot(hs)
 
 ger_df <- fortify(ger)
 
-breaks_GAM_EVI = quantile(SOS$sp, seq(0.1,0.9,0.01))
-breaks_LOG_EVI = quantile(SOS$b4, seq(0.1,0.9,0.02))
+breaks_GAM_EVI = quantile(SOS$sp, seq(0.1,0.9,0.001))
+breaks_LOG_EVI = quantile(SOS$b4, seq(0.1,0.9,0.001))
 ramp_GAM_EVI <- colorpanel(n=length(breaks_GAM_EVI)-1, low="#440154", mid="#20928c", high="#fde725")
 ramp_LOG_EVI <- colorpanel(n=length(breaks_GAM_EVI)-1, low="#440154", mid="#20928c", high="#fde725")
 
-hist(SOS$GAM_EVI, breaks=150)
 
-p1 <- ggplot()+
+ggplot()+
   geom_polygon(data = ger_df, 
             aes(x = long, y = lat, group = group),
-            color = 'black', fill="grey")+
+            color = 'black', fill="lightgrey")+
   geom_point(data = SOS, aes(x=X, y=Y, color=GAM_EVI), size=3)+
   coord_fixed(1.0)+
   scale_colour_gradientn(colours = ramp_GAM_EVI)+

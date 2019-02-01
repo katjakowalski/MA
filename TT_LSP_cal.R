@@ -33,18 +33,10 @@ tmk <- tmk %>%
 # remove all plots with NA
 tmk <- tmk %>%
   group_by(STATION_ID) %>%
-  filter(!any(is.nan(WERT)))
+  filter(!any(is.nan(WERT))) %>%
+  filter(length(STATION_ID) == 318)
 
 colnames(tmk)[1] <- "stat_id"
-
-# load SOS data 
-# setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/")
-# LSP_evi <- read.csv(file="20181211_mean_evi.csv", header=TRUE)
-# LSP_ndvi <- read.csv(file="20181211_mean_ndvi.csv", header=TRUE)
-# LSP <- merge(LSP_evi[, c("b4", "sp", "stat_id")], LSP_ndvi[, c("b4", "sp", "stat_id","X","Y")], by="stat_id")
-# 
-# colnames(LSP) <- c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI", "GAM_NDVI","X","Y") # remove this
-
 
 # load PEP data
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/PEP/PEP725_Kowalski")
@@ -206,13 +198,10 @@ names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 #add differences 
 GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("diff_GAM_EVI_TT","diff_GAM_NDVI_TT","diff_LOG_EVI_TT","diff_LOG_NDVI_TT","TT", "stat_id")], by="stat_id")
 
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190128_GDD_SOS.csv",row.names = FALSE )
-
-#GDD_GAM_EVI_percentile <- subset(GDD_SOS, GDD_GAM_EVI <= quantile(GDD_GAM_EVI, 0.95) & GDD_GAM_EVI >= quantile(GDD_GAM_EVI, 0.05))
-#write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )
+write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_GDD_SOS.csv",row.names = FALSE )
 
 GDD_PEP <- GDD_SOS[!is.na(GDD_SOS$GDD_PEP),]
-write.csv(GDD_PEP, file="20190126_results_PEP.csv",row.names = FALSE )
+write.csv(GDD_PEP, file="20190201_results_PEP.csv",row.names = FALSE )
 
 # correlation CD and differences TT/SOS
 cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_TT)
@@ -233,11 +222,13 @@ cor.test(GDD_SOS$LOG_EVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$PEP_SOS)
 
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$TT)
+
 # mean CD
-mean(GDD_SOS$CD_GAM_EVI, na.rm=TRUE)
-mean(GDD_SOS$CD_LOG_EVI, na.rm=TRUE)
-mean(GDD_SOS$CD_GAM_NDVI, na.rm=TRUE)
-mean(GDD_SOS$CD_LOG_NDVI, na.rm=TRUE)
+sum(mean(GDD_SOS$CD_GAM_EVI, na.rm=TRUE),
+    mean(GDD_SOS$CD_LOG_EVI, na.rm=TRUE),
+    mean(GDD_SOS$CD_GAM_NDVI, na.rm=TRUE),
+    mean(GDD_SOS$CD_LOG_NDVI, na.rm=TRUE))/4
 
 # mean GDD 
 mean(GDD_SOS$GDD_GAM_EVI, na.rm=TRUE)
@@ -277,19 +268,30 @@ summary(GAM_EVI)
 GDD_SOS$CD_GAM_EVI
 # scatterplot GDD SOS vs. GDD PEP
 
-p1 <- ggplot(GDD_SOS)+
-  geom_point(aes(x=GDD_GAM_NDVI, y=GDD_PEP))+
+lm_eqn <- function(x,y,df){
+  m <- lm(y ~ x, df);
+  eq <- substitute(italic(y) == b * italic(x) + a *","~~italic("RMSE")~"="~RMSE ,#*","~~italic(r)^2~"="~r2, 
+                   list(a = format(coef(m)[1], digits = 5), 
+                        b = format(coef(m)[2], digits = 2), 
+                        RMSE = format(sqrt(mean((y - x)^2, na.rm=TRUE))/100, digits = 2)))
+  as.character(as.expression(eq));                 
+}
+
+ggplot(GDD_SOS,aes(x=GDD_GAM_NDVI, y=GDD_PEP))+
+  geom_point()+
   geom_abline(intercept = 0, slope = 1)+
   theme_bw()+
+  geom_smooth(method="lm", se=FALSE, color="blue")+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
         legend.text=element_text(size=12))+
   scale_x_continuous(limits=c(0,550))+
   labs( x=expression(GAM[NDVI]), y= "PEP")+
-  annotate("text", x=400, y=90, label= "r = 0.48", size=3.5, hjust=0) +
-  annotate("text", x=400, y=65, label= "p < 0.001", size=3, hjust=0)
+  annotate("text", x=400, y=90, label= "r = 0.48", size=3.5, hjust=0)+
+  geom_text(x = 400, y = 55, label = lm_eqn(x=GDD_SOS$GDD_GAM_NDVI, y=GDD_SOS$GDD_PEP, df=GDD_SOS), parse = TRUE)
 
+coef(lm(GDD_PEP ~ GDD_GAM_NDVI, data=GDD_SOS))
 
 
 p2 <- ggplot(GDD_SOS)+

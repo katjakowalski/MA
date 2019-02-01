@@ -28,11 +28,11 @@ tmk <- tmk %>%
 # remove all plots with NA
 tmk <- tmk %>%
   group_by(STATION_ID) %>%
-  filter(!any(is.nan(WERT)))
+  filter(!any(is.nan(WERT))) %>%
+  filter(length(STATION_ID) == 318)
 
-      
 ###################################################################################
-cd_model <- function(statid, 
+sq_model <- function(statid, 
                      t_day, 
                      year,
                      doy,
@@ -49,21 +49,15 @@ cd_model <- function(statid,
                     date)
 
   SOS_CD <- NULL
-  #k <- 0
 
   for( i in unique(data$statid)){
 
     d_f = subset(data, data$statid == i & data$year == 2017)
     d_c = subset(data, data$statid == i & data$date >= "2016-09-01" & data$date <= "2017-05-01" )
-    print(i)
-    print(paste("df", length(d_f$doy)))
-    print(paste("dc", length(d_c$doy)))
-    
-    #if(length(d_f$doy) >= 330 & length(d_c$doy) >= 190 ){
-      
+
       forcing <- 0
       chilling <- 0 
-      #k <- k + 1
+ 
       k <- 0
       t1 <- 0
       # chilling 
@@ -79,8 +73,6 @@ cd_model <- function(statid,
         
         if(chilling > c_crit){
           t1 = doy_chill
-          #print(paste(t1))
-          print(paste(k))
           break
         }
       }
@@ -88,7 +80,7 @@ cd_model <- function(statid,
         print(paste("chilling insufficient for station", i))
         out <- NULL 
         out <- data.frame("stat_id" = i, 
-                          "CD" = NA,
+                          "SQ" = NA,
                           "t_CD" = NA)
         SOS_CD <- rbind(SOS_CD, out)
         next
@@ -111,7 +103,7 @@ cd_model <- function(statid,
           if (forcing >= f_crit){
            
             out <- data.frame("stat_id" = i, 
-                              "CD" = doy_sos,
+                              "SQ" = doy_sos,
                               "t_CD" = t1)
             SOS_CD <- rbind(SOS_CD, out)
             break
@@ -119,50 +111,46 @@ cd_model <- function(statid,
         }
         else{next}
       }
-      #if (is.null(out)){
-      #  print(paste(i))
-
-      #}
-    #}
-    #else{print(paste("obs", i))}
   }
   return(SOS_CD)
 }
 
 
-SOS_CD <- cd_model(statid=tmk$STATION_ID, 
+SOS_SQ <- sq_model(statid=tmk$STATION_ID, 
                    t_day=tmk$WERT,
                    year = tmk$year,
                    doy= tmk$doy,
                    date = tmk$datum)
 
-mean(is.na(SOS_CD$CD))
-mean(GDD_SOS$CD_GAM_EVI)
-mean(GDD_SOS$CD_LOG_EVI)
-mean(GDD_SOS$GDD_GAM_EVI)
-mean(GDD_SOS$GDD_LOG_EVI)
+mean(is.na(SOS_SQ$SQ))
+
 
 # merge with RS SOS estimates 
-GDD_SOS <- merge(GDD_SOS, SOS_CD[,c("CD", "stat_id")], by="stat_id", all.x=TRUE)
 
-test <- subset(GDD_SOS, !is.na(CD))
+GDD_SOS <- merge(GDD_SOS, SOS_SQ[,c("SQ", "stat_id")], by="stat_id", all.x=TRUE)
+
+test <- subset(GDD_SOS, !is.na(GDD_SOS$))
 
 
 # correlation
-cor.test(GDD_SOS$GAM_EVI, GDD_SOS$CD, use="complete.obs")
-cor.test(GDD_SOS$LOG_EVI, GDD_SOS$CD, use="complete.obs")
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$SQ, use="complete.obs")
 
-cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$CD, use="complete.obs")
-cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$CD, use="complete.obs")
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$SQ, use="complete.obs")
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$SQ, use="complete.obs")
 
-cor.test(GDD_SOS$PEP_SOS, GDD_SOS$CD, use="complete.obs")
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$SQ, use="complete.obs")
 
 # difference CD - SOS
-GDD_SOS$diff_GAM_EVI_CD <- GDD_SOS$CD - GDD_SOS$GAM_EVI
-GDD_SOS$diff_LOG_EVI_CD <- GDD_SOS$CD - GDD_SOS$LOG_EVI 
+GDD_SOS$diff_GAM_EVI_CD <- GDD_SOS$SQ - GDD_SOS$GAM_EVI
+GDD_SOS$diff_LOG_EVI_CD <- GDD_SOS$SQ - GDD_SOS$LOG_EVI 
 
-GDD_SOS$diff_GAM_NDVI_CD <- GDD_SOS$CD - GDD_SOS$GAM_NDVI
-GDD_SOS$diff_LOG_NDVI_CD <- GDD_SOS$CD - GDD_SOS$LOG_NDVI 
+GDD_SOS$diff_GAM_NDVI_CD <- GDD_SOS$SQ - GDD_SOS$GAM_NDVI
+GDD_SOS$diff_LOG_NDVI_CD <- GDD_SOS$SQ - GDD_SOS$LOG_NDVI 
+
+test <- subset(GDD_SOS, !is.na(SQ))
+
+write.csv(test, file="20190201_SQ_results_80CD.csv",row.names = FALSE )
 
 cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_CD)
 cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_CD)
@@ -189,7 +177,7 @@ ggplot(data=pheno_rs)+
 
 quantile(pheno_rs_cd$CD, na.rm=TRUE, c(.05, .50,  .95))
 
-write.csv(pheno_rs, file="20190121_PBM_results.csv",row.names = FALSE )
+write.csv(GDD_SOS, file="20190201_GDD_SOS.csv",row.names = FALSE )
 
 ggplot(data=pheno_rs)+
   geom_point(aes(x=TT, y=CD))

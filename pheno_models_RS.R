@@ -12,7 +12,8 @@ data <- read.csv(header=TRUE, sep=",", file= "data_clear.csv")
 
 ############################################################
 
-plotid <- 155005
+plotid <- 554102
+
   #76620
   #290507
   #155005
@@ -48,7 +49,7 @@ ggplot(data_sub, aes(x = doy, y = evi)) +
   geom_point(aes(shape=sensor))+
   #geom_line(aes(x=doy, y=predict))+
   labs(x="DOY", y="EVI")+
-  scale_x_continuous(labels=seq(0,350, 100), breaks= seq(0,350, 100))+
+  #scale_x_continuous(labels=seq(0,350, 100), breaks= seq(0,350, 100))+
   theme_bw()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
@@ -96,8 +97,58 @@ fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
 fit_spl_evi$coefficients
 summary(fit_spl_evi)
 fit_spl_evi$coefficients
+####################################################################################################
 
+k <- 8
+df <- with(data_sub, data.frame(doy = seq(min(doy), max(doy))))
+knots <- with(data_sub, list(doy = seq(min(doy), max(doy), length = k)))
+sm <- smoothCon(s(doy, k = k, bs = "cr"), data = df, knots = knots)[[1]]$X
+colnames(sm) <- levs <- paste0("F", seq_len(k))
+basis <- gather(cbind(sm, df), Fun, Value, -doy)
+basis <- transform(basis, Fun = factor(Fun, levels = levs))
 
+sm2 <- smoothCon(s(doy, k = k, bs = "cr"), data = data_sub, knots = knots)[[1]]$X
+beta <- coef(lm(evi ~ sm2 - 1, data = data_sub))
+scbasis <- sweep(sm, 2L, beta, FUN = "*")
+colnames(scbasis) <- levs <- paste0("F", seq_len(k))
+fit <- cbind(df, fitted = rowSums(scbasis))
+scbasis <- gather(cbind(scbasis, df), Fun, Value, -doy)
+scbasis <- transform(scbasis, Fun = factor(Fun, levels = levs))
+
+ylims <- range(basis$Value, scbasis$Value, data_sub$evi)
+
+ggplot(basis, aes(x = doy, y = Value, group = Fun, colour = Fun)) +
+  geom_path() +
+  scale_x_continuous(breaks = knots$doy, labels = NULL, minor_breaks = NULL) +
+  scale_y_continuous(limits = ylims) +
+  scale_colour_discrete(name = "Basis Function") +
+  theme(legend.position = "none") +
+  geom_point(data = data_sub, mapping = aes(x = doy, y = evi), inherit.aes = FALSE, size = 2, colour = "grey70") +
+  labs(y = "d15n_label", x = "Year CE (Knots)")
+
+ggplot(scbasis, aes(x = doy, y = Value, group = Fun, colour = Fun)) +
+  geom_path() +
+  scale_x_continuous(breaks = knots$doy, labels = NULL, minor_breaks = NULL) +
+  scale_y_continuous(limits = ylims) +
+  scale_colour_discrete(name = "Basis Function") +
+  theme(legend.position = "none") +
+  geom_point(data = data_sub, mapping = aes(x = doy, y = evi), inherit.aes = FALSE, size = 2, colour = "grey70") +
+  geom_line(data = fit, mapping = aes(x = doy, y = fitted), inherit.aes = FALSE,
+            size = 0.75, colour = "black") +
+  labs(y = "d15n_label", x = "Year CE (Knots)")
+
+tp <- smoothCon(s(doy, k = k, bs = "tp"), data = df)[[1]]$X
+colnames(tp) <- levs <- paste0("F", seq_len(k))
+tpbasis <- gather(cbind(tp, df), Fun, Value, -doy)
+tpbasis <- transform(tpbasis, Fun = factor(Fun, levels = levs))
+
+ggplot(tpbasis, aes(x = doy, y = Value, group = Fun, colour = Fun)) +
+  geom_path() +
+  scale_colour_discrete(name = "Basis Function") +
+  theme(legend.position = "none") +
+  labs(y = "d15n_label", x = "Year CE")
+
+####################################################################################################
 #mat <- predict.gam(fit_spl_evi, type="lpmatrix")
 #head(mat)
 #plot(data_sub$doy, mat[, "s(doy).9"], type="l")

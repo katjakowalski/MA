@@ -1,8 +1,3 @@
-
-write("TMP = '\\\\141.20.140.91//SAN_Projects//Spring//workspace//Katja//germany//temp'", 
-      file=file.path(Sys.getenv('R_USER'), '.Renviron'))
-tempdir()
-
 library(mgcv)
 library(tidyverse)
 library(ggplot2)
@@ -21,6 +16,7 @@ data <- subset(data, dwd_stat != 379 &   # climate data missing
                        dwd_stat != 4878 & # climate data missing
                        dwd_stat != 5100 & # climate data missing
                        dwd_stat != 5715 & # climate data missing
+                       dwd_stat != 4485 & # climate data missing
                        dwd_stat != 1550 &   # sample
                        dwd_stat != 3679 &   # sample
                        dwd_stat != 7424)    # sample
@@ -231,21 +227,21 @@ res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
 results_ndvi <- merge(res_spl_ndvi[, c(1:8)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
 
 # model differences (sample)
-results_evi$diff_px <- abs(results_evi$sp - results_evi$b4)
-results_ndvi$diff_px <- abs(results_ndvi$sp - results_ndvi$b4)
+results_evi$diff_px <- results_evi$sp - results_evi$b4
+results_ndvi$diff_px <- results_ndvi$sp - results_ndvi$b4
 
 mean(results_ndvi$diff_px, na.rm=TRUE)
-mean(results_evi$diff_px, na.rm=TRUE)
+sd(results_ndvi$diff_px, na.rm=TRUE)
 
+mean(results_evi$diff_px, na.rm=TRUE)
+sd(results_evi$diff_px, na.rm=TRUE)
 
 # write to disk (sample)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-write.csv(results_evi, file = "20190128_results_px_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20190128_results_px_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "20190201_results_px_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "20190201_results_px_ndvi.csv", row.names = FALSE)
 
-#results_evi <- read.csv("20190117_results_px_evi.csv")
-#results_ndvi <- read.csv("20190117_results_px_ndvi.csv")
 ########################################################################
 # Convergence (sample)
 mean(!is.na(results_evi$b4))
@@ -270,17 +266,20 @@ results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id
                     results_evi[, c("plotid","b4","sp")], 
                     by="plotid")
 colnames(results_px) <- c("plotid","LOG_NDVI", "GAM_NDVI","observations", "stat_id", "LOG_EVI","GAM_EVI")
-results_px$GAM_diff <- abs(results_px$GAM_NDVI- results_px$GAM_EVI)
-results_px$LOG_diff <- abs(results_px$LOG_NDVI - results_px$LOG_EVI)
+results_px$GAM_diff <- results_px$GAM_NDVI- results_px$GAM_EVI
+results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
 
-results_px$NDVI_diff <- abs(results_px$GAM_NDVI- results_px$LOG_NDVI)
-results_px$EVI_diff <- abs(results_px$GAM_EVI - results_px$LOG_EVI)
+results_px$NDVI_diff <- results_px$GAM_NDVI- results_px$LOG_NDVI
+results_px$EVI_diff <- results_px$GAM_EVI - results_px$LOG_EVI
 
 cor.test(results_px$LOG_NDVI, results_px$LOG_EVI, use="complete.obs")
 cor.test(results_px$GAM_NDVI, results_px$GAM_EVI, use="complete.obs")
 
+
 mean(results_px$GAM_diff, na.rm=TRUE)
+sd(results_px$GAM_diff, na.rm=TRUE)
 mean(results_px$LOG_diff, na.rm=TRUE)
+sd(results_px$LOG_diff, na.rm=TRUE)
 
 mean(results_px$NDVI_diff, na.rm=TRUE)
 mean(results_px$EVI_diff, na.rm=TRUE)
@@ -311,32 +310,26 @@ sample_gam_evi <- as.data.frame(table(sample_gam_evi$stat_id))
 mean(mean(sample_log_evi$Freq),mean(sample_log_ndvi$Freq),mean(sample_gam_ndvi$Freq),mean(sample_gam_evi$Freq))
 
 # model differnces (station)
-mean_evi$diff_station <- abs(mean_evi$sp - mean_evi$b4)
-mean_ndvi$diff_station <- abs(mean_ndvi$sp - mean_ndvi$b4)
+mean_evi$diff_station <- mean_evi$sp - mean_evi$b4
+mean_ndvi$diff_station <- mean_ndvi$sp - mean_ndvi$b4
 
 # add X and Y coordinates
 dwd_stations <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/20190120_stations_dwd.csv", header=TRUE)
 mean_evi <- merge(mean_evi, dwd_stations[, c("X", "Y","Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 mean_ndvi <- merge(mean_ndvi, dwd_stations[, c("X", "Y", "Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 
-
-
 # write to disk 
-write.csv(mean_evi, file="20190128_results_stat_evi.csv",row.names = FALSE )
-write.csv(mean_ndvi, file="20190128_results_stat_ndvi.csv",row.names = FALSE )
+write.csv(mean_evi, file="20190201_results_stat_evi.csv",row.names = FALSE )
+write.csv(mean_ndvi, file="20190201_results_stat_ndvi.csv",row.names = FALSE )
 
-# quantiles 0.05-0.95 
-GAM_EVI_quant <- subset(mean_evi, sp <= quantile(sp, 0.95) & sp >= quantile(sp, 0.05))
-#write.csv(GDD_GAM_EVI_percentile, file="20190123_TT_GDD_GAM_EVI_percentiles.csv",row.names = FALSE )
-hist(GAM_EVI_quant$sp)
 
 ########################################################################
 # mean difference (station)
 mean(mean_ndvi$diff_station, na.rm=TRUE)
-mean(mean_ndvi$diff_px, na.rm=TRUE)
+sd(mean_ndvi$diff_station, na.rm=TRUE)
 
-mean(mean_evi$diff_px)
 mean(mean_evi$diff_station)
+sd(mean_evi$diff_station)
 
 # mean MSE (station)
 mean(mean_evi$MSE_gam)
@@ -358,31 +351,25 @@ data.frame("LOG_NDVI" = c(quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))),
 
 # mean SOS and sd
 
-data.frame("LOG_NDVI" = c(mean(mean_ndvi$b4, na.rm=TRUE), sd(mean_ndvi$b4, na.rm=TRUE)),
-           "LOG_EVI" = c(mean(mean_evi$b4),sd(mean_evi$b4)),
-           "GAM_NDVI" = c(mean(mean_ndvi$sp),sd(mean_ndvi$sp) ),
-           "GAM_EVI" = c(mean(mean_evi$sp),sd(mean_evi$sp) )
-           )
+data.frame(c(mean(mean_ndvi$b4, na.rm=TRUE),
+             mean(mean_evi$b4),
+             mean(mean_ndvi$sp),
+             mean(mean_evi$sp)))
+         
 
 # differences between indices (station)
 mean_results <- merge(mean_evi[, c("stat_id","b4","sp","observations")], 
                       mean_ndvi[, c("stat_id","b4","sp")], by="stat_id")
 colnames(mean_results) <- c("stat_id","LOG_EVI", "GAM_EVI","observations","LOG_NDVI","GAM_NDVI")
-mean_results$GAM_diff <- abs(mean_results$GAM_NDVI- mean_results$GAM_EVI)
-mean_results$LOG_diff <- abs(mean_results$LOG_NDVI - mean_results$LOG_EVI)
+mean_results$GAM_diff <- mean_results$GAM_NDVI - mean_results$GAM_EVI
+mean_results$LOG_diff <- mean_results$LOG_NDVI - mean_results$LOG_EVI
 
 cor.test(mean_results$LOG_NDVI, mean_results$LOG_EVI, use="complete.obs")
 cor.test(mean_results$GAM_NDVI, mean_results$GAM_EVI, use="complete.obs")
 
 mean(mean_results$LOG_diff, na.rm=TRUE)
+sd(mean_results$LOG_diff, na.rm=TRUE)
 mean(mean_results$GAM_diff, na.rm=TRUE)
-
-# observations & MSE 
-ggplot(data=mean_ndvi)+
-  geom_point(aes(x=MSE_gam, y=observations))
-
-cor.test(mean_evi$observations, mean_evi$MSE_log, use="complete.obs")
-cor.test(mean_ndvi$observations, mean_ndvi$MSE_log, use="complete.obs")
-
+sd(mean_results$GAM_diff, na.rm=TRUE)
 
 
