@@ -140,32 +140,26 @@ cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$SQ, use="complete.obs")
 cor.test(GDD_SOS$PEP_SOS, GDD_SOS$SQ, use="complete.obs")
 
 # difference CD - SOS
-GDD_SOS$diff_GAM_EVI_CD <- GDD_SOS$SQ - GDD_SOS$GAM_EVI
-GDD_SOS$diff_LOG_EVI_CD <- GDD_SOS$SQ - GDD_SOS$LOG_EVI 
+GDD_SOS$diff_GAM_EVI_SQ <- GDD_SOS$SQ - GDD_SOS$GAM_EVI
+GDD_SOS$diff_LOG_EVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_EVI 
 
-GDD_SOS$diff_GAM_NDVI_CD <- GDD_SOS$SQ - GDD_SOS$GAM_NDVI
-GDD_SOS$diff_LOG_NDVI_CD <- GDD_SOS$SQ - GDD_SOS$LOG_NDVI 
+GDD_SOS$diff_GAM_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$GAM_NDVI
+GDD_SOS$diff_LOG_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_NDVI 
 
-test <- subset(GDD_SOS, !is.na(SQ))
 
-write.csv(test, file="20190201_SQ_results_80CD.csv",row.names = FALSE )
+setwd("O:/Student_Data/Kowalski/MA")
+write.csv(GDD_SOS, file="20190202_GDD_SOS.csv",row.names = FALSE )
 
-cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_CD)
-cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_CD)
-cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_CD)
-cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_CD)
+cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_SQ)
+cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_SQ)
+cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_SQ)
+cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_SQ)
 
-mean(GDD_SOS$diff_GAM_EVI_CD, na.rm = TRUE)
-sd(GDD_SOS$diff_GAM_EVI_CD, na.rm=TRUE)
+mean(GDD_SOS$diff_GAM_EVI_SQ, na.rm = TRUE)
+mean(GDD_SOS$diff_LOG_EVI_SQ, na.rm = TRUE)
+mean(GDD_SOS$diff_LOG_NDVI_SQ, na.rm = TRUE)
+mean(GDD_SOS$diff_GAM_NDVI_SQ, na.rm = TRUE)
 
-mean(GDD_SOS$diff_LOG_EVI_CD, na.rm = TRUE)
-sd(GDD_SOS$diff_LOG_EVI_CD, na.rm=TRUE)
-
-mean(GDD_SOS$diff_LOG_NDVI_CD, na.rm = TRUE)
-sd(GDD_SOS$diff_LOG_NDVI_CD, na.rm=TRUE)
-
-mean(GDD_SOS$diff_GAM_NDVI_CD, na.rm = TRUE)
-sd(GDD_SOS$diff_GAM_NDVI_CD, na.rm=TRUE)
 
 # difference TT - CD
 pheno_rs$diff_TT_CD <- pheno_rs$TT - pheno_rs$CD 

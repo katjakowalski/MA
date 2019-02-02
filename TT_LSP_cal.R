@@ -273,18 +273,24 @@ GDD_SOS$CD_GAM_EVI
 
 lm_eqn <- function(x,y,df){
   m <- lm(y ~ x, df);
-  eq <- substitute(y == b * x + a * ","* ~~"RMSE"~"="~RMSE ,#*","~~italic(r)^2~"="~r2, 
+  eq <- substitute(y == b * x + a,
                    list(a = format(coef(m)[1], digits = 5), 
-                        b = format(coef(m)[2], digits = 2), 
-                        RMSE = format(sqrt(mean((y - x)^2, na.rm=TRUE))/100, digits = 2)))
-  as.character(as.expression(eq));                 
+                        b = format(coef(m)[2], digits = 2)))
+    as.character(as.expression(eq));
+}
+
+rmse_eqn <- function(x,y,df){
+  m <- lm(y ~ x, df);
+  eq <- substitute("RMSE"~"="~RMSE,
+                   list(RMSE = format(sqrt(mean((resid(m))^2, na.rm=TRUE)), digits = 2)))
+  as.character(as.expression(eq));
 }
 
 p1 <- ggplot(GDD_SOS,aes(x=GDD_GAM_NDVI, y=GDD_PEP))+
-  geom_point()+
-  geom_abline(intercept = 0, slope = 1, linetype="dashed", size=1.1, color="darkgrey")+
+  geom_point(alpha=1/2)+
+  geom_abline(intercept = 0, slope = 1, linetype="dashed",color="#383838", size=0.9)+
   theme_bw()+
-  geom_smooth(method="lm", se=FALSE, color="black")+
+  geom_smooth(method="lm", se=FALSE, size=0.6, color="black")+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
@@ -292,10 +298,13 @@ p1 <- ggplot(GDD_SOS,aes(x=GDD_GAM_NDVI, y=GDD_PEP))+
   scale_x_continuous(limits=c(25,550), breaks=seq(0,550,100))+
   scale_y_continuous(limits=c(25,350),breaks=seq(0,350,50))+
   labs( x=expression(GAM[NDVI]), y= "PEP")+
-  annotate("text", x=300, y=40, label= "r = 0.48", size=3.5, hjust=0)+
-  annotate("text", x = 300, y = 55, hjust=0, 
+  annotate("text", x=30, y=300, label= "r = 0.48", size=3.5, hjust=0)+
+  annotate("text", x = 30, y = 350, hjust=0, 
             label = lm_eqn(x=GDD_SOS$GDD_GAM_NDVI, y=GDD_SOS$GDD_PEP, df=GDD_SOS), 
-            parse = TRUE, size=3.5)
+            parse = TRUE, size=3.5)+
+  annotate("text", x= 30, y=325, hjust=0, size=3.5,
+           label=rmse_eqn(x=GDD_SOS$GDD_GAM_NDVI, y=GDD_SOS$GDD_PEP, df=GDD_SOS),
+           parse=TRUE)
 
 
 
@@ -350,11 +359,13 @@ p4 <- ggplot(GDD_SOS)+
            parse = TRUE, size=3.5)
 
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190202_PEP_GDD_x4.png", 
-    width= 1200, height=800, res=200 )
+#png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190202_PEP_GDD_x4.png", 
+    #width= 1200, height=800, res=200 )
+png(file="O:/Student_Data/Kowalski/MA/20190202_PEP_GDD_test.png", 
+  width= 2480, height=1504, res=300 )
 grid.arrange(p2, p1, p4, p3, nrow = 2)
 dev.off()
-
+ 
 # plot histogram of all GDD estimates
 pl_GDD_EVI <- melt(GDD_SOS[, c("GDD_GAM_EVI", "GDD_LOG_EVI", "GDD_PEP")])
 pl_GDD_NDVI <- melt(GDD_SOS[, c("GDD_GAM_NDVI", "GDD_LOG_NDVI", "GDD_PEP")])
@@ -375,12 +386,16 @@ ggplot(data=pl_GDD_EVI)+
 dev.off()
 
 # SOS vs. PEP SOS 
+PEP_SOS <- subset(GDD_SOS, !is.na(GDD_SOS$PEP_SOS))
 
-p1 <- ggplot(GDD_SOS)+
-  geom_point(aes(x=GAM_EVI, y=PEP_SOS))+
-  geom_abline(aes(intercept=0, slope=1))+
-  coord_equal()+
+lm1 <- lm(PEP_SOS~GAM_EVI, data=PEP_SOS)
+p1 <- ggplot(GDD_SOS,aes(x=GAM_EVI, y=PEP_SOS))+
+  geom_point(alpha=1/2)+
+  geom_abline(aes(slope=1, intercept=0),linetype="dashed", color="gray22",
+              size=0.9)+
   theme_bw()+
+  geom_smooth(method="lm", se=FALSE, size=0.6,color="black")+
+  coord_equal()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
@@ -388,14 +403,25 @@ p1 <- ggplot(GDD_SOS)+
         legend.title = element_blank())+
   scale_x_continuous(limits=c(65,160))+
   scale_y_continuous(limits= c(80,140),breaks=seq(80,140,20))+
-  labs(x=expression(GAM[EVI]), y="PEP")+
-  annotate("text", x=150, y=83, label= "r=0.53", size=4.3) 
+  labs(x= expression(paste("SOS ",GAM[EVI])), y="SOS ground observation")+
+  annotate("text", x=65, y=125, 
+           label= paste0("r = ",round(cor(GDD_SOS$GAM_EVI,GDD_SOS$PEP_SOS, use="complete.obs"),2)), 
+           size=4, hjust=0)+
+  annotate("text", x=65, y=135, hjust=0, 
+           label = lm_eqn(x=GDD_SOS$GAM_EVI, y=GDD_SOS$PEP_SOS, df=GDD_SOS), 
+           parse = TRUE, size=4)+
+  annotate("text", x= 65, y=130, hjust=0, size=4,
+           label= paste0("RMSE ==",round(sqrt(mean((resid(lm1))^2, na.rm=TRUE)),2)),
+           parse=TRUE)
 
-p2 <- ggplot(GDD_SOS)+
-  geom_point(aes(x=LOG_EVI, y=PEP_SOS))+
-  geom_abline(aes(intercept=0, slope=1))+
-  coord_equal()+
+lm1 <- lm(PEP_SOS~LOG_EVI, data=PEP_SOS)
+p2 <- ggplot(GDD_SOS,aes(x=LOG_EVI, y=PEP_SOS))+
+  geom_point(alpha=1/2)+
+  geom_abline(aes(slope=1, intercept=0),linetype="dashed", color="gray22",
+              size=0.9)+
   theme_bw()+
+  geom_smooth(method="lm", se=FALSE, size=0.6,color="black")+
+  coord_equal()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
@@ -403,14 +429,25 @@ p2 <- ggplot(GDD_SOS)+
         legend.title = element_blank())+
   scale_x_continuous(limits=c(65,160))+
   scale_y_continuous(limits= c(80,140),breaks=seq(80,140,20))+
-  labs(x=expression(LOG[EVI]), y="PEP")+
-  annotate("text", x=150, y=83, label= "r=0.45", size=4.3) 
+  labs(x= expression(paste("SOS ",LOG[EVI])), y="SOS ground observation")+
+  annotate("text", x=65, y=125, 
+           label= paste0("r = ",round(cor(GDD_SOS$LOG_EVI,GDD_SOS$PEP_SOS, use="complete.obs"),2)), 
+           size=4, hjust=0)+
+  annotate("text", x=65, y=135, hjust=0, 
+           label = lm_eqn(x=GDD_SOS$LOG_EVI, y=GDD_SOS$PEP_SOS, df=GDD_SOS), 
+           parse = TRUE, size=4)+
+  annotate("text", x= 65, y=130, hjust=0, size=4,
+           label= paste0("RMSE ==",round(sqrt(mean((resid(lm1))^2, na.rm=TRUE)),2)),
+           parse=TRUE)
 
-p3 <- ggplot(GDD_SOS)+
-  geom_point(aes(x=GAM_NDVI, y=PEP_SOS))+
-  geom_abline(aes(intercept=0, slope=1))+
-  coord_equal()+
+lm1 <- lm(PEP_SOS~GAM_NDVI, data=PEP_SOS)
+p3 <- ggplot(GDD_SOS,aes(x=GAM_NDVI, y=PEP_SOS))+
+  geom_point(alpha=1/2)+
+  geom_abline(aes(slope=1, intercept=0),linetype="dashed", color="gray22",
+              size=0.9)+
   theme_bw()+
+  geom_smooth(method="lm", se=FALSE, size=0.6,color="black")+
+  coord_equal()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
@@ -418,14 +455,25 @@ p3 <- ggplot(GDD_SOS)+
         legend.title = element_blank())+
   scale_x_continuous(limits=c(65,160))+
   scale_y_continuous(limits= c(80,140),breaks=seq(80,140,20))+
-  labs(x=expression(GAM[NDVI]), y="PEP")+
-  annotate("text", x=150, y=83, label= "r=0.36", size=4.3) 
+  labs(x= expression(paste("SOS ",GAM[NDVI])), y="SOS ground observation")+
+  annotate("text", x=65, y=125, 
+           label= paste0("r = ",round(cor(GDD_SOS$GAM_NDVI,GDD_SOS$PEP_SOS, use="complete.obs"),2)), 
+           size=4, hjust=0)+
+  annotate("text", x=65, y=135, hjust=0, 
+           label = lm_eqn(x=GDD_SOS$GAM_NDVI, y=GDD_SOS$PEP_SOS, df=GDD_SOS), 
+           parse = TRUE, size=4)+
+  annotate("text", x= 65, y=130, hjust=0, size=4,
+           label= paste0("RMSE ==",round(sqrt(mean((resid(lm1))^2, na.rm=TRUE)),2)),
+           parse=TRUE)
 
-p4 <- ggplot(GDD_SOS)+
-  geom_point(aes(x=LOG_NDVI, y=PEP_SOS))+
-  geom_abline(aes(intercept=0, slope=1))+
-  coord_equal()+
+lm1 <- lm(PEP_SOS~LOG_NDVI, data=PEP_SOS)
+p4 <- ggplot(GDD_SOS,aes(x=LOG_NDVI, y=PEP_SOS))+
+  geom_point(alpha=1/2)+
+  geom_abline(aes(slope=1, intercept=0),linetype="dashed", color="gray22",
+              size=0.9)+
   theme_bw()+
+  geom_smooth(method="lm", se=FALSE, size=0.6,color="black")+
+  coord_equal()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
@@ -433,11 +481,21 @@ p4 <- ggplot(GDD_SOS)+
         legend.title = element_blank())+
   scale_x_continuous(limits=c(65,160))+
   scale_y_continuous(limits= c(80,140),breaks=seq(80,140,20))+
-  labs(x=expression(LOG[NDVI]), y="PEP")+
-  annotate("text", x=150, y=83, label= "r=0.32", size=4.3) 
+  labs(x= expression(paste("SOS ",LOG[NDVI])), y="SOS ground observation")+
+  annotate("text", x=65, y=125, 
+           label= paste0("r = ",round(cor(GDD_SOS$LOG_NDVI,GDD_SOS$PEP_SOS, use="complete.obs"),2)), 
+           size=4, hjust=0)+
+  annotate("text", x=65, y=135, hjust=0, 
+           label = lm_eqn(x=GDD_SOS$LOG_NDVI, y=GDD_SOS$PEP_SOS, df=GDD_SOS), 
+           parse = TRUE, size=4)+
+  annotate("text", x= 65, y=130, hjust=0, size=4,
+           label= paste0("RMSE ==",round(sqrt(mean((resid(lm1))^2, na.rm=TRUE)),2)),
+           parse=TRUE)
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190126_PEP_LSP_4x.png", 
-    width= 1200, height=800, res=200 )
+#png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190126_PEP_LSP_4x.png", 
+#    width= 1200, height=800, res=200 )
+png(file="O:/Student_Data/Kowalski/MA/20190202_PEP_SOS_4x.png", 
+    width= 2480, height=1504, res=300 )
 grid.arrange(p1,p2,p3,p4, nrow=2)
 dev.off()
 

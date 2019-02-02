@@ -3,6 +3,7 @@ library(scales)
 library(raster)
 library(rgdal)
 library(gplots)
+library(gridExtra)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/")
 ger <- readOGR("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/germany.shp")
