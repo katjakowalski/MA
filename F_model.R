@@ -129,8 +129,6 @@ mean(is.na(SOS_SQ$SQ))
 
 GDD_SOS <- merge(GDD_SOS, SOS_SQ[,c("SQ", "stat_id")], by="stat_id", all.x=TRUE)
 
-test <- subset(GDD_SOS, !is.na(GDD_SOS$))
-
 
 # correlation
 cor.test(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
