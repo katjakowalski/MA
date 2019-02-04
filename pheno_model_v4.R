@@ -17,9 +17,9 @@ data <- subset(data, dwd_stat != 379 &   # climate data missing
                        dwd_stat != 5100 & # climate data missing
                        dwd_stat != 5715 & # climate data missing
                        dwd_stat != 4485 & # climate data missing
-                       dwd_stat != 1550 &   # sample
-                       dwd_stat != 3679 &   # sample
-                       dwd_stat != 7424)    # sample
+                       dwd_stat != 1550 &   # samples missing
+                       dwd_stat != 3679 &   # sample missing
+                       dwd_stat != 7424)    # sample missing
 
 data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)

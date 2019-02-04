@@ -1,5 +1,5 @@
 
-## TT Model
+#### TT Model ####
 
 quantile(GDD_SOS$TT,na.rm=TRUE, c(0.05,0.5,0.95))
 # correlation 
@@ -37,8 +37,25 @@ cor.test(SOS_TT$GAM_NDVI, SOS_TT$DEM, use="complete.obs")
 cor.test(SOS_TT$LOG_NDVI, SOS_TT$DEM, use="complete.obs")
 cor.test(SOS_TT$LOG_EVI, SOS_TT$DEM, use="complete.obs")
 
-#####################################################################################
-# TT_GDD
+#### end ####
+
+#### TT_GDD ####
+
+# mean GDD 
+mean(GDD_SOS$GDD_GAM_EVI, na.rm=TRUE)
+sd(GDD_SOS$GDD_GAM_EVI)
+mean(GDD_SOS$GDD_LOG_EVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_LOG_EVI)
+mean(GDD_SOS$GDD_GAM_NDVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_GAM_NDVI)
+mean(GDD_SOS$GDD_LOG_NDVI,na.rm=TRUE)
+sd(GDD_SOS$GDD_LOG_NDVI, na.rm=TRUE)
+mean(GDD_PEP$GDD_PEP, na.rm=TRUE)
+
+data.frame("LOG_NDVI" =quantile(GDD_SOS$GDD_LOG_NDVI, c(0.05, 0.5, 0.95), na.rm=TRUE),
+           "LOG_EVI" = quantile(GDD_SOS$GDD_LOG_EVI, c(0.05, 0.5, 0.95)),
+           "GAM_NDVI" = quantile(GDD_SOS$GDD_GAM_NDVI, c(0.05, 0.5, 0.95)),
+           "GAM_EVI" = quantile(GDD_SOS$GDD_GAM_EVI, c(0.05, 0.5, 0.95)))
 
 
 
@@ -53,17 +70,8 @@ cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$PEP_SOS)
 
 cor.test(GDD_SOS$TT, GDD_SOS$PEP_SOS, use="complete.obs")
+cor.test(GDD_SOS$SQ, GDD_SOS$PEP_SOS, use="complete.obs")
 
-# mean GDD 
-mean(GDD_SOS$GDD_GAM_EVI, na.rm=TRUE)
-sd(GDD_SOS$GDD_GAM_EVI)
-mean(GDD_SOS$GDD_LOG_EVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_LOG_EVI)
-mean(GDD_SOS$GDD_GAM_NDVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_GAM_NDVI)
-mean(GDD_SOS$GDD_LOG_NDVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_LOG_NDVI, na.rm=TRUE)
-mean(GDD_PEP$GDD_PEP, na.rm=TRUE)
 
 
 # correlation of models, same index 
@@ -79,6 +87,15 @@ cor.test(GDD_SOS$GDD_GAM_EVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$GDD_PEP, use="complete.obs")
 cor.test(GDD_SOS$GDD_LOG_EVI, GDD_SOS$GDD_PEP, use="complete.obs")
+
+
+# correlation GDD & CD
+cor.test(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$CD_LOG_NDVI, use="complete.obs")
+cor.test(GDD_SOS$GDD_LOG_EVI, GDD_SOS$CD_LOG_EVI, use="complete.obs")
+cor.test(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$CD_GAM_NDVI, use="complete.obs")
+cor.test(GDD_SOS$GDD_GAM_EVI, GDD_SOS$CD_GAM_EVI, use="complete.obs")
+
+cor.test(GDD_SOS$GDD_PEP, GDD_SOS$CD_PEP)
 
 # regression GDD SOS dependent on CD
 
@@ -111,10 +128,9 @@ cor.test(GDD_SOS$LOG_EVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$PEP_SOS)
 
+#### end ####
 
-
-###############################################################################################################################
-# F Model
+#### F Model ####
 
 # correlation
 cor.test(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
@@ -134,9 +150,11 @@ mean(GDD_SOS$diff_GAM_NDVI_SQ, na.rm = TRUE)
 quantile(pheno_rs_cd$CD, na.rm=TRUE, c(.05, .50,  .95))
 mean(pheno_rs$diff_TT_CD, na.rm=TRUE)
 
+#### end ####
+
 #####################################################################################################
 
-#TT LSP cal 
+#### TT LSP cal ####
 cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_SQ, use="complete.obs")
 cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_SQ)
 cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_SQ)
@@ -178,3 +196,5 @@ ggplot(data=GDD_SOS)+
 summary(GAM_EVI)
 
 GDD_SOS$CD_GAM_EVI
+
+#### end ####

@@ -82,23 +82,3 @@ tt_model <- function(statid,
   return(SOS_TT)
 }
 
-# SOS_TT <- tt_model(
-#   statid = tmk$STATION_ID,
-#   t_day = tmk$WERT,
-#   year = tmk$year,
-#   doy = tmk$doy
-# )
-# 
-# ############################################################################
-# 
-# # load and merge SOS estimates from RS
-# mean_evi <- read.csv(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_evi.csv")
-# mean_ndvi <- read.csv(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_ndvi.csv")
-# 
-# SOS_TT <- merge(mean_evi[, c("sp", "b4","stat_id", "X","Y")], SOS_TT, by="stat_id", all.x=TRUE)
-# colnames(SOS_TT) <- c("stat_id", "GAM_EVI","LOG_EVI","X","Y","TT" )
-# 
-# SOS_TT <- merge(mean_ndvi[, c("sp", "b4","stat_id")], SOS_TT, by="stat_id", all.y=TRUE)
-# colnames(SOS_TT)[c(2:3)] <- c("GAM_NDVI","LOG_NDVI")
-# 
-
