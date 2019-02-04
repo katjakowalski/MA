@@ -1,5 +1,6 @@
-setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
-tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
+
+root_folder = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk"
+tmk <- read.csv(file=file.path(root_folder, "TMK_MN004.txt"), header=TRUE, sep=";")
 
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 

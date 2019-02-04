@@ -1,23 +1,26 @@
-library(lubridate)
-library(ggplot2)
 
-###########################################################################################
-# load DWD meteorological data 
+# load meteorological data
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
 tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
 
+# interpolation of missing temperature data 
+
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 
+## create rows for missing dates 
 tmk <- tmk %>%
   group_by(STATION_ID)%>%
   mutate(datum = as.Date(datum)) %>%
   complete(datum = seq.Date(min(datum), max(datum), by="day"))
 
+## extract day and DOY from date
 tmk$year <- year(tmk$datum)
 tmk$doy <- yday(tmk$datum)
 
+## restrict time interval
 tmk <- subset(tmk, tmk$datum >= "2016-09-01"  & tmk$datum <= "2017-07-15" )    
 
+## calculate moving average 
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
   width   = 4,
@@ -27,10 +30,11 @@ tmk$gap_fill <- rollapply(
   partial=TRUE
 )
 
+## fill gaps with interpolated value 
 tmk <- tmk %>%
   mutate(WERT = coalesce(WERT, gap_fill))
 
-# remove all plots with NA
+# remove all plots with NA 
 tmk <- tmk %>%
   group_by(STATION_ID) %>%
   filter(!any(is.nan(WERT))) %>%
@@ -38,7 +42,7 @@ tmk <- tmk %>%
 
 colnames(tmk)[1] <- "stat_id"
 
-# load PEP data
+# load and merge PEP data
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/PEP/PEP725_Kowalski")
 data_PEP <- read.csv(file="PEP725_Kowalski.csv", header=TRUE, sep=";")
 PEP_stats <- read.csv(file="PEP_DWD_stat.csv", header=TRUE, sep=",")
@@ -104,79 +108,23 @@ tt_CD_count <- function(statid,
         chilling = chilling + 1
       }
     }
-   
+    
+    if( chilling == 0){
+      print("0")
+      out <- data.frame("stat_id" = i,
+                        "CD" = NA)
+      SOS_LSP <- rbind(SOS_LSP, out)
+    }
+   else{
     out <- data.frame("stat_id" = i,
                       "CD" = chilling)
     SOS_LSP <- rbind(SOS_LSP, out)
+   }
   }
   return(SOS_LSP)
 }
 
-###########################################################################################
-
-CD_GAM_EVI <- tt_CD_count(statid=data_input$stat_id, 
-                   t_day=data_input$WERT,
-                   year = data_input$year,
-                   doy= data_input$doy,
-                   datum = data_input$datum,
-                   doy_crit = data_input$GAM_EVI)
-colnames(CD_GAM_EVI) <- c("stat_id","CD_GAM_EVI")
-
-CD_LOG_EVI <- tt_CD_count(statid=data_input$stat_id, 
-                      t_day=data_input$WERT,
-                      year = data_input$year,
-                      doy= data_input$doy,
-                      datum = data_input$datum,
-                      doy_crit = data_input$LOG_EVI)
-colnames(CD_LOG_EVI) <- c("stat_id", "CD_LOG_EVI")
-
-CD_LOG_NDVI <- tt_CD_count(statid=data_LOG_NDVI$stat_id, 
-                      t_day=data_LOG_NDVI$WERT,
-                      year = data_LOG_NDVI$year,
-                      doy= data_LOG_NDVI$doy,
-                      datum = data_LOG_NDVI$datum,
-                      doy_crit = data_LOG_NDVI$LOG_NDVI)
-colnames(CD_LOG_NDVI) <- c("stat_id", "CD_LOG_NDVI")
-
-CD_GAM_NDVI <- tt_CD_count(statid=data_input$stat_id, 
-                      t_day=data_input$WERT,
-                      year = data_input$year,
-                      doy= data_input$doy,
-                      datum = data_input$datum,
-                      doy_crit = data_input$GAM_NDVI)
-colnames(CD_GAM_NDVI) <- c("stat_id", "CD_GAM_NDVI")
-
-
-CD_PEP <- tt_CD_count(statid=data_PEP$stat_id, 
-                      t_day=data_PEP$WERT,
-                      year = data_PEP$year,
-                      doy= data_PEP$doy,
-                      datum = data_PEP$datum,
-                      doy_crit = data_PEP$day)
-colnames(CD_PEP) <- c("stat_id",  "CD_PEP")
-
-###########################################################################################
-
-CD_SOS <- merge(CD_GAM_EVI, CD_LOG_EVI, by="stat_id", all.x=TRUE)
-CD_SOS <- merge(CD_SOS, CD_GAM_NDVI, by="stat_id", all.x=TRUE)
-CD_SOS <- merge(CD_SOS, CD_LOG_NDVI, by="stat_id", all.x=TRUE)
-CD_SOS <- merge(CD_SOS, CD_PEP, by="stat_id", all.x=TRUE)
-
-# add SOS estimates 
-GDD_SOS <- merge(GDD_SOS, CD_SOS , by="stat_id", all.x=TRUE)
-
-# difference CD - SOS
-GDD_SOS$diff_GAM_EVI_SQ <- GDD_SOS$SQ - GDD_SOS$GAM_EVI
-GDD_SOS$diff_LOG_EVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_EVI 
-
-GDD_SOS$diff_GAM_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$GAM_NDVI
-GDD_SOS$diff_LOG_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_NDVI 
-
-# write results
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190204_GDD_SOS.csv",row.names = FALSE )
-
-GDD_PEP <- GDD_SOS[!is.na(GDD_SOS$GDD_PEP),]
-write.csv(GDD_PEP, file="20190204_GDD_PEP.csv",row.names = FALSE )
+  
 
 
 

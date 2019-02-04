@@ -1,10 +1,4 @@
 
-library(lubridate)
-library(ggplot2)
-library(zoo)
-library(dplyr)
-library(tidyr)
-
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
 tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
 

@@ -1,39 +1,29 @@
 
 ## TT Model
 
-quantile(SOS_TT$TT,na.rm=TRUE, c(0.05,0.5,0.95))
+quantile(GDD_SOS$TT,na.rm=TRUE, c(0.05,0.5,0.95))
 # correlation 
-cor.test(SOS_TT$GAM_NDVI, SOS_TT$TT, use="complete.obs")
-cor.test(SOS_TT$LOG_NDVI, SOS_TT$TT, use="complete.obs")
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$TT, use="complete.obs")
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$TT, use="complete.obs")
 
-cor.test(SOS_TT$GAM_EVI, SOS_TT$TT, use="complete.obs")
-cor.test(SOS_TT$LOG_EVI, SOS_TT$TT, use="complete.obs")
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$TT, use="complete.obs")
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$TT, use="complete.obs")
 
-
-# difference (residuals)
-SOS_TT$diff_GAM_EVI_TT <- SOS_TT$TT - SOS_TT$GAM_EVI
-SOS_TT$diff_LOG_EVI_TT <- SOS_TT$TT - SOS_TT$LOG_EVI
-
-SOS_TT$diff_GAM_NDVI_TT <- SOS_TT$TT - SOS_TT$GAM_NDVI 
-SOS_TT$diff_LOG_NDVI_TT <- SOS_TT$TT - SOS_TT$LOG_NDVI 
 
 # mean difference 
-mean(SOS_TT$diff_GAM_EVI_TT, na.rm = TRUE)
-mean(SOS_TT$diff_LOG_EVI_TT, na.rm = TRUE)
+mean(GDD_SOS$diff_GAM_EVI_TT, na.rm = TRUE)
+mean(GDD_SOS$diff_LOG_EVI_TT, na.rm = TRUE)
 
-mean(SOS_TT$diff_GAM_NDVI_TT, na.rm = TRUE)
-mean(SOS_TT$diff_LOG_NDVI_TT, na.rm = TRUE)
+mean(GDD_SOS$diff_GAM_NDVI_TT, na.rm = TRUE)
+mean(GDD_SOS$diff_LOG_NDVI_TT, na.rm = TRUE)
 
 
 # correlation difference & east-west
-cor.test(SOS_TT$diff_GAM_EVI_TT, SOS_TT$X, use="complete.obs")
-cor.test(SOS_TT$diff_LOG_EVI_TT, SOS_TT$X, use="complete.obs")
-cor.test(SOS_TT$diff_LOG_NDVI_TT, SOS_TT$X, use="complete.obs")
-cor.test(SOS_TT$diff_GAM_NDVI_TT, SOS_TT$X, use="complete.obs")
+cor.test(GDD_SOS$diff_GAM_EVI_TT, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_LOG_EVI_TT, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_LOG_NDVI_TT, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_GAM_NDVI_TT, GDD_SOS$X, use="complete.obs")
 
-
-# correlation with elevation (DEM), 
-SOS_TT <- merge(SOS_TT, dwd_stations[, c("DEM","proxartifi", "prox_undis", "LC", "Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 
 # difference SOS - TT & DEM
 cor.test(SOS_TT$diff_GAM_EVI_TT, SOS_TT$DEM, use="complete.obs")
