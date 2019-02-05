@@ -1,14 +1,65 @@
 
+#### rs models ####
+
+
+#### end ####
+
+#### phenological gradients ####
+
+# east-west gradient SOS 
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$X)
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$X)
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$X)
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$X)
+
+# elevation gradient SOS
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$DEM)
+
+# elevation gradient GDD
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$DEM)
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$DEM)
+
+# east-west gradient GDD
+cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$X)
+cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$X)
+cor(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$X)
+cor(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$X)
+
+# distance to artifical LC
+cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$proxartifi)
+cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$proxartifi)
+
+
+# TT and SQ gradients 
+cor(GDD_SOS$TT, GDD_SOS$X)
+cor(GDD_SOS$TT, GDD_SOS$DEM)
+cor(GDD_SOS$TT, GDD_SOS$proxartifi)
+
+cor(GDD_SOS$SQ, GDD_SOS$proxartifi, use="complete.obs")
+
+
+#### end ####
+
+
 #### TT Model ####
 
 quantile(GDD_SOS$TT,na.rm=TRUE, c(0.05,0.5,0.95))
-# correlation 
+
+mean(GDD_SOS$TT)
+
+# correlation SOS & TT
 cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$TT, use="complete.obs")
 cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$TT, use="complete.obs")
 
 cor.test(GDD_SOS$GAM_EVI, GDD_SOS$TT, use="complete.obs")
 cor.test(GDD_SOS$LOG_EVI, GDD_SOS$TT, use="complete.obs")
 
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$TT, use="complete.obs")
 
 # mean difference 
 mean(GDD_SOS$diff_GAM_EVI_TT, na.rm = TRUE)
@@ -17,12 +68,14 @@ mean(GDD_SOS$diff_LOG_EVI_TT, na.rm = TRUE)
 mean(GDD_SOS$diff_GAM_NDVI_TT, na.rm = TRUE)
 mean(GDD_SOS$diff_LOG_NDVI_TT, na.rm = TRUE)
 
+mean(GDD_SOS$diff_PEP_TT, na.rm=TRUE)
 
 # correlation difference & east-west
 cor.test(GDD_SOS$diff_GAM_EVI_TT, GDD_SOS$X, use="complete.obs")
 cor.test(GDD_SOS$diff_LOG_EVI_TT, GDD_SOS$X, use="complete.obs")
 cor.test(GDD_SOS$diff_LOG_NDVI_TT, GDD_SOS$X, use="complete.obs")
 cor.test(GDD_SOS$diff_GAM_NDVI_TT, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_PEP_TT, GDD_SOS$X, use="complete.obs")
 
 
 # difference SOS - TT & DEM
@@ -36,6 +89,8 @@ cor.test(SOS_TT$GAM_EVI, SOS_TT$DEM, use="complete.obs")
 cor.test(SOS_TT$GAM_NDVI, SOS_TT$DEM, use="complete.obs")
 cor.test(SOS_TT$LOG_NDVI, SOS_TT$DEM, use="complete.obs")
 cor.test(SOS_TT$LOG_EVI, SOS_TT$DEM, use="complete.obs")
+
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$DEM)
 
 #### end ####
 
@@ -130,7 +185,10 @@ cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$PEP_SOS)
 
 #### end ####
 
-#### F Model ####
+#### SQ Model ####
+
+quantile(GDD_SOS$SQ,na.rm=TRUE, c(0.05,0.5,0.95))
+mean(GDD_SOS$SQ, na.rm=TRUE)
 
 # correlation
 cor.test(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
@@ -141,24 +199,31 @@ cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$SQ, use="complete.obs")
 
 cor.test(GDD_SOS$PEP_SOS, GDD_SOS$SQ, use="complete.obs")
 
-
 mean(GDD_SOS$diff_GAM_EVI_SQ, na.rm = TRUE)
 mean(GDD_SOS$diff_LOG_EVI_SQ, na.rm = TRUE)
 mean(GDD_SOS$diff_LOG_NDVI_SQ, na.rm = TRUE)
 mean(GDD_SOS$diff_GAM_NDVI_SQ, na.rm = TRUE)
+mean(GDD_SOS$diff_PEP_SQ, na.rm=TRUE)
 
 quantile(pheno_rs_cd$CD, na.rm=TRUE, c(.05, .50,  .95))
 mean(pheno_rs$diff_TT_CD, na.rm=TRUE)
 
+cor.test(GDD_SOS$diff_GAM_EVI_SQ, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_LOG_EVI_SQ, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_LOG_NDVI_SQ, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_GAM_NDVI_SQ, GDD_SOS$X, use="complete.obs")
+cor.test(GDD_SOS$diff_PEP_SQ, GDD_SOS$X, use="complete.obs")
+
 #### end ####
 
-#####################################################################################################
 
 #### TT LSP cal ####
 cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_SQ, use="complete.obs")
 cor.test(GDD_SOS$CD_LOG_EVI, GDD_SOS$diff_LOG_EVI_SQ)
 cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_SQ)
 cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_SQ)
+
+cor.test(GDD_SOS$CD_PEP, GDD_SOS$diff_PEP_SQ)
 
 
 # correlation CD and differences TT/SOS
@@ -167,6 +232,7 @@ cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$diff_GAM_EVI_TT)
 
 cor.test(GDD_SOS$CD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_TT)
 cor.test(GDD_SOS$CD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_TT)
+
 
 # correlation GDD & CD
 cor.test(GDD_SOS$CD_GAM_EVI, GDD_SOS$GDD_GAM_EVI)
@@ -184,17 +250,18 @@ sum(mean(GDD_SOS$CD_GAM_EVI, na.rm=TRUE),
     mean(GDD_SOS$CD_GAM_NDVI, na.rm=TRUE),
     mean(GDD_SOS$CD_LOG_NDVI, na.rm=TRUE))/4
 
+#### end ####
 
+#### mean sprint temperature ####
+cor.test(GDD_SOS$GAM_EVI, GDD_SOS$spring_mean_temp)
+cor.test(GDD_SOS$LOG_EVI, GDD_SOS$spring_mean_temp)
+cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$spring_mean_temp)
+cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$spring_mean_temp)
+cor.test(GDD_SOS$PEP_SOS, GDD_SOS$spring_mean_temp)
 
-# regression GDD SOS dependent on CD
+cor.test(GDD_SOS$TT, GDD_SOS$spring_mean_temp)
+cor.test(GDD_SOS$SQ, GDD_SOS$spring_mean_temp)
 
-GAM_EVI <- lm(diff_LOG_EVI_TT ~ CD_LOG_EVI, data=GDD_SOS)
-
-ggplot(data=GDD_SOS)+
-  geom_point(aes(x=diff_GAM_EVI_TT, CD_GAM_EVI))
-
-summary(GAM_EVI)
-
-GDD_SOS$CD_GAM_EVI
 
 #### end ####
+

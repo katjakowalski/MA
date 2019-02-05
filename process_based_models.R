@@ -38,6 +38,8 @@ SOS_TT$diff_LOG_EVI_TT <- SOS_TT$TT - SOS_TT$LOG_EVI
 SOS_TT$diff_GAM_NDVI_TT <- SOS_TT$TT - SOS_TT$GAM_NDVI 
 SOS_TT$diff_LOG_NDVI_TT <- SOS_TT$TT - SOS_TT$LOG_NDVI 
 
+
+
 #### end ####
 
 ###############################################################################################################################
@@ -101,7 +103,7 @@ GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("LOG_EVI", "GAM_EVI", "LOG_NDVI","GAM_NDVI"
 GDD_SOS <- merge(GDD_SOS, PEP_SOS[, c("DWD_ID","day")], by.x="stat_id",by.y="DWD_ID", all.x=TRUE)
 names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 
-
+GDD_SOS$diff_PEP_TT <- GDD_SOS$TT - GDD_SOS$PEP_SOS
 #### end ####
 
 ###############################################################################################################################
@@ -123,6 +125,8 @@ GDD_SOS$diff_LOG_EVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_EVI
 
 GDD_SOS$diff_GAM_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$GAM_NDVI
 GDD_SOS$diff_LOG_NDVI_SQ <- GDD_SOS$SQ - GDD_SOS$LOG_NDVI 
+
+GDD_SOS$diff_PEP_SQ <- GDD_SOS$SQ - GDD_SOS$PEP_SOS
 
 #### end ####
 
@@ -231,9 +235,9 @@ colnames(tmk_spring) <- c("stat_id", "spring_mean_temp")
 GDD_SOS <- merge(GDD_SOS, tmk_spring[,c("spring_mean_temp", "stat_id")], by="stat_id", all.x=TRUE)
 
 # write results
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190204_GDD_SOS.csv",row.names = FALSE )
+write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190205_GDD_SOS.csv",row.names = FALSE )
 
 GDD_PEP <- GDD_SOS[!is.na(GDD_SOS$GDD_PEP),]
-write.csv(GDD_PEP, file="20190204_GDD_PEP.csv",row.names = FALSE )
+write.csv(GDD_PEP, file="20190205_GDD_PEP.csv",row.names = FALSE )
 
 #### end #### 
