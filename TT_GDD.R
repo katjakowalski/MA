@@ -48,6 +48,7 @@ PEP <- PEP[!is.na(PEP$day),]
 PEP <- PEP[!is.na(PEP$DWD_ID),]
 PEP_SOS <- aggregate(day ~ DWD_ID, data = PEP, mean)
 
+
 data_input <- merge(tmk, SOS_TT[, c("LOG_EVI", "GAM_EVI","LOG_NDVI","GAM_NDVI", "stat_id")], by="stat_id", all.y=TRUE)
 data_LOG_NDVI <- data_input[!is.na(data_input$LOG_NDVI), ]
 

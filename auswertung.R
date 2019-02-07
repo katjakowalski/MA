@@ -4,43 +4,96 @@
 
 #### end ####
 
-#### phenological gradients ####
+data.frame("LOG_NDVI" = ,
+           "LOG_EVI" = ,
+           "GAM_NDVI" = ,
+           "GAM_EVI" = )
+
+##### phenological gradients #####
+
+## SOS ##
 
 # east-west gradient SOS 
-cor.test(GDD_SOS$GAM_EVI, GDD_SOS$X)
-cor.test(GDD_SOS$LOG_EVI, GDD_SOS$X)
-cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$X)
-cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$X)
+data.frame("LOG_NDVI" = cor(GDD_SOS$LOG_NDVI, GDD_SOS$X, use="complete.obs") ,
+           "LOG_EVI" = cor(GDD_SOS$LOG_EVI, GDD_SOS$X),
+           "GAM_NDVI" = cor(GDD_SOS$GAM_NDVI, GDD_SOS$X),
+           "GAM_EVI" = cor(GDD_SOS$GAM_EVI, GDD_SOS$X))
+
 
 # elevation gradient SOS
-cor.test(GDD_SOS$GAM_EVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$LOG_EVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$DEM)
+data.frame("LOG_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$LOG_NDVI, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$DEM, GDD_SOS$LOG_EVI, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$GAM_NDVI, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$DEM, GDD_SOS$GAM_EVI, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$DEM, GDD_SOS$PEP_SOS, use="complete.obs"),
+           "TT" = cor(GDD_SOS$DEM, GDD_SOS$TT, use="complete.obs"),
+           "SQ" = cor(GDD_SOS$DEM, GDD_SOS$SQ, use="complete.obs"))
 
-# elevation gradient GDD
-cor.test(GDD_SOS$GAM_EVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$LOG_EVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$DEM)
-cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$DEM)
+# urban LC SOS
+data.frame("LOG_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$LOG_NDVI, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$LOG_EVI, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$GAM_NDVI, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$GAM_EVI, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$X_sum, GDD_SOS$PEP_SOS, use="complete.obs"),
+           "TT" = cor(GDD_SOS$X_sum, GDD_SOS$TT, use="complete.obs"),
+           "SQ" = cor(GDD_SOS$X_sum, GDD_SOS$SQ, use="complete.obs"))
+
+## GDD ##
 
 # east-west gradient GDD
-cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$X)
-cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$X)
-cor(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$X)
-cor(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$X)
+data.frame("LOG_NDVI" = cor(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$X,use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$X),
+           "GAM_NDVI" = cor(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$X),
+           "GAM_EVI" = cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$X),
+           "PEP" = cor(GDD_SOS$GDD_PEP, GDD_SOS$X,use="complete.obs"))
 
-# distance to artifical LC
-cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$proxartifi)
-cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$proxartifi)
+# elevation LC GDD
+data.frame("LOG_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$GDD_LOG_NDVI, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$DEM, GDD_SOS$GDD_LOG_EVI, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$GDD_GAM_NDVI, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$DEM, GDD_SOS$GDD_GAM_EVI, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$DEM, GDD_SOS$GDD_PEP, use="complete.obs"))
+
+# urban LC GDD
+data.frame("LOG_NDVI" = cor(GDD_PEP$X_sum, GDD_PEP$GDD_LOG_NDVI, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_PEP$X_sum, GDD_PEP$GDD_LOG_EVI, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_PEP$X_sum, GDD_PEP$GDD_GAM_NDVI, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_PEP$X_sum, GDD_PEP$GDD_GAM_EVI, use="complete.obs"),
+           "PEP" = cor(GDD_PEP$X_sum, GDD_PEP$GDD_PEP, use="complete.obs"))
 
 
-# TT and SQ gradients 
-cor(GDD_SOS$TT, GDD_SOS$X)
-cor(GDD_SOS$TT, GDD_SOS$DEM)
-cor(GDD_SOS$TT, GDD_SOS$proxartifi)
 
-cor(GDD_SOS$SQ, GDD_SOS$proxartifi, use="complete.obs")
+## Residuals TT ##
+
+# elevation residuals TT
+data.frame("LOG_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_LOG_NDVI_TT, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_LOG_EVI_TT, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_GAM_NDVI_TT, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_GAM_EVI_TT, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$DEM, GDD_SOS$diff_PEP_TT, use="complete.obs"))
+
+## Residuals SQ ##
+
+# east west gradient residuals SQ
+data.frame("LOG_NDVI" = cor(GDD_SOS$X, GDD_SOS$diff_LOG_NDVI_SQ, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$X, GDD_SOS$diff_LOG_EVI_SQ, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$X, GDD_SOS$diff_GAM_NDVI_SQ, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$X, GDD_SOS$diff_GAM_EVI_SQ, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$X, GDD_SOS$diff_PEP_SQ, use="complete.obs"))
+
+# elevation residuals SQ
+data.frame("LOG_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_LOG_NDVI_SQ, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_LOG_EVI_SQ, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_GAM_NDVI_SQ, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$DEM, GDD_SOS$diff_GAM_EVI_SQ, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$DEM, GDD_SOS$diff_PEP_SQ, use="complete.obs"))
+
+# urban LC residuals SQ
+data.frame("LOG_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_LOG_NDVI_SQ, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_LOG_EVI_SQ, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_GAM_NDVI_SQ, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_GAM_EVI_SQ, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$X_sum, GDD_SOS$diff_PEP_SQ, use="complete.obs"))
 
 
 #### end ####
@@ -183,21 +236,29 @@ cor.test(GDD_SOS$LOG_EVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$PEP_SOS)
 cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$PEP_SOS)
 
+
 #### end ####
 
 #### SQ Model ####
+
 
 quantile(GDD_SOS$SQ,na.rm=TRUE, c(0.05,0.5,0.95))
 mean(GDD_SOS$SQ, na.rm=TRUE)
 
 # correlation
-cor.test(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
-cor.test(GDD_SOS$LOG_EVI, GDD_SOS$SQ, use="complete.obs")
+data.frame("LOG_NDVI" = ,
+           "LOG_EVI" = ,
+           "GAM_NDVI" = ,
+           "GAM_EVI" = )
+cor(GDD_SOS$GAM_EVI, GDD_SOS$SQ, use="complete.obs")
+cor(GDD_SOS$LOG_EVI, GDD_SOS$SQ, use="complete.obs")
 
-cor.test(GDD_SOS$GAM_NDVI, GDD_SOS$SQ, use="complete.obs")
-cor.test(GDD_SOS$LOG_NDVI, GDD_SOS$SQ, use="complete.obs")
+cor(GDD_SOS$GAM_NDVI, GDD_SOS$SQ, use="complete.obs")
+cor(GDD_SOS$LOG_NDVI, GDD_SOS$SQ, use="complete.obs")
 
-cor.test(GDD_SOS$PEP_SOS, GDD_SOS$SQ, use="complete.obs")
+cor(GDD_SOS$PEP_SOS, GDD_SOS$SQ, use="complete.obs")
+
+cor(GDD_SOS$TT, GDD_SOS$SQ, use="complete.obs")
 
 mean(GDD_SOS$diff_GAM_EVI_SQ, na.rm = TRUE)
 mean(GDD_SOS$diff_LOG_EVI_SQ, na.rm = TRUE)
@@ -208,11 +269,7 @@ mean(GDD_SOS$diff_PEP_SQ, na.rm=TRUE)
 quantile(pheno_rs_cd$CD, na.rm=TRUE, c(.05, .50,  .95))
 mean(pheno_rs$diff_TT_CD, na.rm=TRUE)
 
-cor.test(GDD_SOS$diff_GAM_EVI_SQ, GDD_SOS$X, use="complete.obs")
-cor.test(GDD_SOS$diff_LOG_EVI_SQ, GDD_SOS$X, use="complete.obs")
-cor.test(GDD_SOS$diff_LOG_NDVI_SQ, GDD_SOS$X, use="complete.obs")
-cor.test(GDD_SOS$diff_GAM_NDVI_SQ, GDD_SOS$X, use="complete.obs")
-cor.test(GDD_SOS$diff_PEP_SQ, GDD_SOS$X, use="complete.obs")
+
 
 #### end ####
 

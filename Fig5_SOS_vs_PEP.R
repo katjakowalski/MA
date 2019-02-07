@@ -85,3 +85,22 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/201
     width= 1200, height=800, res=200 )
 grid.arrange(p2, p1, p4, p3, nrow = 2)
 dev.off()
+
+
+ggplot(GDD_SOS, aes(x=GAM_EVI, y=TT))+
+  geom_point()+
+  geom_smooth(method="lm", se=FALSE, size=0.6, color="black")+
+  geom_abline(intercept = 0, slope = 1)+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
+  scale_x_continuous(limits=c(50,150), breaks= seq(0,550,100))+
+  scale_y_continuous(limits=c(50,150),breaks=seq(0,350,50))+
+  labs( x=expression(LOG[EVI]), y= "TT")+
+  annotate("text", x=70, y=130, label= "r = 0.48", size=3.5, hjust=0)+
+  annotate("text", x = 70, y = 120, hjust=0,
+           label = lm_eqn(x=GDD_SOS$LOG_EVI, y=GDD_SOS$TT, df=GDD_SOS),
+           parse = TRUE, size=3.5)
+

@@ -10,6 +10,9 @@ setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
 data <- read.csv(header=TRUE, sep=",", file= "data_clear.csv") 
 
+data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
+data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
+
 ############################################################
 
 plotid <- 554102
