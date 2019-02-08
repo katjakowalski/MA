@@ -29,6 +29,12 @@ data.frame("LOG_NDVI" = cor(GDD_SOS$DEM, GDD_SOS$LOG_NDVI, use="complete.obs"),
            "TT" = cor(GDD_SOS$DEM, GDD_SOS$TT, use="complete.obs"),
            "SQ" = cor(GDD_SOS$DEM, GDD_SOS$SQ, use="complete.obs"))
 
+data.frame("LOG_NDVI" = cor(GDD_PEP$LOG_NDVI, GDD_PEP$DEM),
+           "LOG_EVI" = cor(GDD_PEP$LOG_EVI, GDD_PEP$DEM),
+           "GAM_NDVI" = cor(GDD_PEP$GAM_NDVI, GDD_PEP$DEM),
+           "GAM_EVI" = cor(GDD_PEP$GAM_EVI, GDD_PEP$DEM) )
+
+
 # urban LC SOS
 data.frame("LOG_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$LOG_NDVI, use="complete.obs"),
            "LOG_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$LOG_EVI, use="complete.obs"),

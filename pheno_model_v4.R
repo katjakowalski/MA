@@ -47,7 +47,6 @@ pheno_model <- function(plotid,
   k <- 0
 
   for( p in unique(data$plotid)){
-    #print(paste("plot: ", p))
     
     transition <- c()
     b4_start <- c()
@@ -60,7 +59,7 @@ pheno_model <- function(plotid,
     
     if(length(d$doy) >= min_obs){
       
-      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250) ## 250 before 
+      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250) 
       transition <- with(d_tr, doy[index == max(index)]) + 20
       d <- subset(d, d$doy <= transition)
       

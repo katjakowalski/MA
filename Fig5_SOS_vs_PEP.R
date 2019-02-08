@@ -87,7 +87,7 @@ grid.arrange(p2, p1, p4, p3, nrow = 2)
 dev.off()
 
 
-ggplot(GDD_SOS, aes(x=GAM_EVI, y=TT))+
+ggplot(GDD_SOS, aes(x=LOG_EVI, y=TT))+
   geom_point()+
   geom_smooth(method="lm", se=FALSE, size=0.6, color="black")+
   geom_abline(intercept = 0, slope = 1)+

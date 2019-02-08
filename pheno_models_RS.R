@@ -15,7 +15,8 @@ data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
 ############################################################
 
-plotid <- 554102
+plotid <-98312
+
 
   #76620
   #290507
@@ -71,7 +72,7 @@ transition <- with(d_tr, doy[evi == max(evi)]) + 20
 
 data_sub <- subset(data_sub, data_sub$doy <= transition)
 
-#b4_start <- round(mean(data_sub[which(data_sub$evi > median(data_sub$evi)), "doy"]), 0)
+b4_start <- round(mean(data_sub[which(data_sub$evi > median(data_sub$evi)), "doy"]), 0)
 
 #if (is.nan(base_index)){
 #  base_index <- min(data_sub$evi)
@@ -88,12 +89,12 @@ data_sub <- rbind(data_sub, df_base)
 
 
 
-# fit_ols <- nls(evi ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
-#            start = list(b1 = min(data_sub$evi), 
-#                         b2 = max(data_sub$evi), 
-#                         b3 = 0.1, 
-#                         b4 = b4_start),
-#            data = data_sub)
+fit_ols <- nls(evi ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
+           start = list(b1 = min(data_sub$evi),
+                        b2 = max(data_sub$evi),
+                        b3 = 0.2,
+                        b4 = b4_start),
+           data = data_sub)
 
 
 fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
@@ -152,16 +153,10 @@ ggplot(tpbasis, aes(x = doy, y = Value, group = Fun, colour = Fun)) +
   labs(y = "d15n_label", x = "Year CE")
 
 ####################################################################################################
-#mat <- predict.gam(fit_spl_evi, type="lpmatrix")
-#head(mat)
-#plot(data_sub$doy, mat[, "s(doy).9"], type="l")
 
+data_sub$predict_gam <- as.numeric(predict(fit_spl_evi))
+data_sub$predict_log <- as.numeric(predict(fit_ols))
 
-#data_sub$predict_ndvi <- as.numeric(predict(fit_spl_ndvi))
-data_sub$predict_evi <- as.numeric(predict(fit_spl_evi))
-
-
-plot(fit_spl_evi, scale=0, pages=1)
 
 newDF <- with(data_sub, data.frame(doy = seq(0, transition, 1)))  
 B <- predict(fit_spl_evi,  newDF, type = "response", se.fit = TRUE)
@@ -173,42 +168,25 @@ Xp <- (X0 - X1) / eps
 fd_d1 <- Xp %*% coef(fit_spl_evi)
 which.min(fd_d1) 
 
-data_sub_pl <- data_sub[, c("predict_evi")]
-data_sub_pl$predict_evi <- data_sub_pl$predict_evi
+data_sub_pl <- data_sub[, c("predict_gam", "predict_log")]
 data_sub_pl <- melt(data_sub_pl)
 data_sub_pl$doy <- rep(data_sub$doy,2)
 
+df_deriv <- data.frame(doy = 0:189,value = (fd_d1*10*-1)+0.3, variable="deriv")
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_log_554102.png", 
-    width= 1200, height=1000, res=200 )
-ggplot(data= data_sub_pl) +
-  #geom_point(data=data_sub, aes(x = doy, y = evi)) +
-  geom_line( aes(x=doy, y= value, color=variable), size=0.8) +
-  #geom_line(data = data.frame(doy = 0:190, deriv1 = fd_d1),
-            #aes(x = doy, y = deriv1  *10 +0.2), color="blue")+
-  #geom_point(aes(x=116, y=0.66), size=3, color="black")+
-  #geom_point(aes(x=129, y=0.59), size=3, color="royalblue2")+
-  #geom_vline(xintercept=116, linetype="dotted")+
-  #geom_vline(xintercept=129, linetype="dotted")+
-  scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
-  scale_color_manual(values=c("royalblue2","black"),
-                     name="Index",
-                     labels=c("EVI", "NDVI"))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20),
-        legend.text=element_text(size=18))+
-  labs(x="DOY", y="VI")
-dev.off()
+data_sub_pl <- rbind(data_sub_pl, df_deriv)
+
+
+
+
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_169424.png", 
     width= 1200, height=1000, res=200 )
 ggplot(data= data_sub) +
-  geom_point(aes(x = doy, y = evi)) +
-  geom_line( aes(x=doy, y= predict_evi), color="red", size=0.8) +
-  #geom_line(aes(x=doy, y=sp0005), color="blue", size= 0.8)+
-  #geom_line(data = data.frame(doy = 0:174, deriv1 = fd_d1),
-            #aes(x = doy, y = (deriv1  *10 *-1)+0.3), color="black")+
+  geom_point(aes(x = doy, y = evi, shape=sensor)) +
+  geom_line( aes(x=doy, y= predict_evi), color="red", size=0.7)+
+  geom_line(data = data.frame(doy = 0:207, deriv1 = fd_d1),
+            aes(x = doy, y = (deriv1 *10 *-1)+0.3), color="black")+
   #geom_point(aes(x=133, y=0.425), size=3, color="red")+
   #geom_vline(xintercept=133, linetype="dotted")+
   theme_bw()+
@@ -221,50 +199,25 @@ ggplot(data= data_sub) +
 
 dev.off()
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_169424.png", 
-    width= 1200, height=1000, res=200 )
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190208_GAM_LOG.png", 
+    width= 16, height=10,unit="cm", res=200 )
 ggplot(data= data_sub_pl) +
   geom_point(data=data_sub, aes(x = doy, y = evi)) +
-  #geom_line( aes(x=doy, y= value, color=variable), size= 0.7) +
-  geom_line(data = data.frame(doy = 0:245, deriv1 = fd_d1),
-    aes(x = doy, y = deriv1  *10 +0.2), color="blue")+
-  #geom_vline(xintercept=133, linetype="dotted")+
-  #geom_vline(xintercept=131, linetype="dotted")+
+  geom_line( aes(x=doy, y= value, color=variable), size= 0.8) +
+  #geom_line(data = data.frame(doy = 0:210, deriv1 = fd_d1),
+    #aes(x = doy, y = (deriv1  *10 * -1) +0.3))+
+  #geom_vline(xintercept=128, linetype="dashed")+
+  #geom_vline(xintercept=125.0416, linetype="dotted")+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
-  theme(axis.text.x = element_text(size=18, color="black"),
-        axis.text.y = element_text(size=18, color="black"),
-        text = element_text(size=20),
-        legend.text=element_text(size=14)) +
+  theme(axis.text.x = element_text(size=12, color="black"),
+        axis.text.y = element_text(size=12, color="black"),
+        text = element_text(size=12),
+        legend.text=element_text(size=12)) +
   labs(x="DOY", y="EVI")+
-  scale_color_manual(values=c("red","blue"),
-                     labels=c("GAM","LOG"),
-                     name="Model")
+  scale_color_manual(values=c("#1f78b4", "#d95f02","gray30"),
+                     labels=c("GAM","LOG","GAM slope"),
+                     name=" ")
 dev.off()
 
 
-ggplot(data=results_px)+
-  geom_point(aes(x=GAM_EVI, y=GAM_NDVI))
 
-ggplot(data=results_px)+
-  geom_point(aes(x=LOG_EVI, y=LOG_NDVI))
-
-######################### mgcViz ###########################
-viz_spl <- getViz(fit_spl_evi)
-
-o <- plot( sm(viz_spl, 1) )
-o + l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
-  l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
-  l_points(shape = 19, size = 1, alpha = 0.1) + theme_classic()
-
-
-print(plot(viz_spl, allTerms = T), pages = 1) # Calls print.plotGam()
-
-qq(viz_spl, method = "simul1", a.qqpoi = list("shape" = 1), a.ablin = list("linetype" = 2))
-qq(viz_spl, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2))
-
-
-check(viz_spl,
-      a.qq = list(method = "tnorm", 
-                  a.cipoly = list(fill = "light blue")), 
-      a.respoi = list(size = 0.5), 
-      a.hist = list(bins = 10))
