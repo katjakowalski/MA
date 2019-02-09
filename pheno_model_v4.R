@@ -229,6 +229,7 @@ results_ndvi <- merge(res_spl_ndvi[, c(1:8)], res_nls_ndvi[, c(4,5,7,10)], by="p
 results_evi$diff_px <- results_evi$sp - results_evi$b4
 results_ndvi$diff_px <- results_ndvi$sp - results_ndvi$b4
 
+map(GDD_SOS[2], mean, na.rm=TRUE)
 mean(results_ndvi$diff_px, na.rm=TRUE)
 sd(results_ndvi$diff_px, na.rm=TRUE)
 
@@ -241,29 +242,29 @@ setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
 write.csv(results_evi, file = "20190201_results_px_evi.csv", row.names = FALSE)
 write.csv(results_ndvi, file = "20190201_results_px_ndvi.csv", row.names = FALSE)
 
+results_ndvi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_ndvi.csv")
+results_evi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_evi.csv")
+
+
 ########################################################################
 # Convergence (sample)
-mean(!is.na(results_evi$b4))
-mean(!is.na(results_evi$sp))
 
-mean(!is.na(results_ndvi$b4))
-mean(!is.na(results_ndvi$sp))
+map(results_evi[c(2,9)], function(x) mean(is.na(x)))
+map(results_ndvi[c(2,9)], function(x) mean(is.na(x)))
+
 
 # Correlation (sample)
-cor.test(results_evi$b4, results_evi$sp, use="complete.obs")
-cor.test(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
+cor(results_evi$b4, results_evi$sp, use="complete.obs")
+cor(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
 
 # Percentiles (sample)
-quantile(results_evi$b4, na.rm=TRUE, c(.05, .50, .95))
-quantile(results_evi$sp, na.rm=TRUE, c(.05, .50, .95))
-quantile(results_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))
-quantile(results_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))
+map(results_evi[c(2,9)], function(x) quantile(x, na.rm=TRUE, c(.05, .50, .95)))
+map(results_ndvi[c(2,9)], function(x) quantile(x, na.rm=TRUE, c(.05, .50, .95)))
 
 
 # differences between indices (sample)
 results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id")], 
-                    results_evi[, c("plotid","b4","sp")], 
-                    by="plotid")
+                    results_evi[, c("plotid","b4","sp")], by="plotid")
 colnames(results_px) <- c("plotid","LOG_NDVI", "GAM_NDVI","observations", "stat_id", "LOG_EVI","GAM_EVI")
 results_px$GAM_diff <- results_px$GAM_NDVI- results_px$GAM_EVI
 results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
@@ -271,17 +272,10 @@ results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
 results_px$NDVI_diff <- results_px$GAM_NDVI- results_px$LOG_NDVI
 results_px$EVI_diff <- results_px$GAM_EVI - results_px$LOG_EVI
 
-cor.test(results_px$LOG_NDVI, results_px$LOG_EVI, use="complete.obs")
-cor.test(results_px$GAM_NDVI, results_px$GAM_EVI, use="complete.obs")
+cor(results_px$LOG_NDVI, results_px$LOG_EVI, use="complete.obs")
+cor(results_px$GAM_NDVI, results_px$GAM_EVI, use="complete.obs")
 
-
-mean(results_px$GAM_diff, na.rm=TRUE)
-sd(results_px$GAM_diff, na.rm=TRUE)
-mean(results_px$LOG_diff, na.rm=TRUE)
-sd(results_px$LOG_diff, na.rm=TRUE)
-
-mean(results_px$NDVI_diff, na.rm=TRUE)
-mean(results_px$EVI_diff, na.rm=TRUE)
+map(results_px[8:11], mean, na.rm=TRUE)
 
 ########################################################################
 #Aggregation to plots
@@ -294,6 +288,7 @@ mean_ndvi <- results_ndvi %>%
   summarise_all(funs(mean), na.rm=TRUE)
 
 # no. of sample fits for each station
+
 sample_log_evi <- subset(results_evi, !is.na(b4))
 sample_log_evi <- as.data.frame(table(sample_log_evi$stat_id))
 
@@ -367,8 +362,7 @@ cor.test(mean_results$LOG_NDVI, mean_results$LOG_EVI, use="complete.obs")
 cor.test(mean_results$GAM_NDVI, mean_results$GAM_EVI, use="complete.obs")
 
 mean(mean_results$LOG_diff, na.rm=TRUE)
-sd(mean_results$LOG_diff, na.rm=TRUE)
 mean(mean_results$GAM_diff, na.rm=TRUE)
-sd(mean_results$GAM_diff, na.rm=TRUE)
+
 
 

@@ -41,11 +41,11 @@ dev.off()
 
 
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/201900208_SOS_EVI_density.png",
-    width= 16, height=8, unit="cm", res=200 )
-ggplot(data=plot_GDD)+
-  geom_density(aes(x=value, fill=variable), adjust=0.6, alpha=0.8, position="identity")+
+    width= 16, height=8, unit="cm", res=500 )
+ggplot(data=plot_GDD, aes(x=value))+
+  geom_density(aes(color=variable),adjust=0.6, alpha=0.8, position="identity",size=0.6)+
   labs(x="GDD")+
-  scale_fill_manual(values=c("#1f78b4","grey30","grey70"),labels=c("GAM","LOG","GO"))+
+  scale_color_manual(values=c("black","#1f78b4","gray50"),labels=c("GAM","LOG","GO"))+
   theme_bw()+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),

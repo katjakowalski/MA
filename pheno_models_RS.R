@@ -15,7 +15,7 @@ data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
 ############################################################
 
-plotid <-98312
+plotid <-259722
 
 
   #76620
@@ -95,7 +95,8 @@ fit_ols <- nls(evi ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
                         b3 = 0.2,
                         b4 = b4_start),
            data = data_sub)
-
+fit_ols
+       
 
 fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
 fit_spl_evi$coefficients
@@ -172,7 +173,7 @@ data_sub_pl <- data_sub[, c("predict_gam", "predict_log")]
 data_sub_pl <- melt(data_sub_pl)
 data_sub_pl$doy <- rep(data_sub$doy,2)
 
-df_deriv <- data.frame(doy = 0:189,value = (fd_d1*10*-1)+0.3, variable="deriv")
+df_deriv <- data.frame(doy = 0:222,value = (fd_d1*10*-1)+0.3, variable="deriv")
 
 data_sub_pl <- rbind(data_sub_pl, df_deriv)
 
@@ -185,7 +186,7 @@ png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam
 ggplot(data= data_sub) +
   geom_point(aes(x = doy, y = evi, shape=sensor)) +
   geom_line( aes(x=doy, y= predict_evi), color="red", size=0.7)+
-  geom_line(data = data.frame(doy = 0:207, deriv1 = fd_d1),
+  geom_line(data = data.frame(doy = 0:197, deriv1 = fd_d1),
             aes(x = doy, y = (deriv1 *10 *-1)+0.3), color="black")+
   #geom_point(aes(x=133, y=0.425), size=3, color="red")+
   #geom_vline(xintercept=133, linetype="dotted")+
@@ -202,8 +203,9 @@ dev.off()
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190208_GAM_LOG.png", 
     width= 16, height=10,unit="cm", res=200 )
 ggplot(data= data_sub_pl) +
+  theme_bw()+
   geom_point(data=data_sub, aes(x = doy, y = evi)) +
-  geom_line( aes(x=doy, y= value, color=variable), size= 0.8) +
+  geom_line( aes(x=doy, y= value, color=variable, linetype=variable), size= 0.8) +
   #geom_line(data = data.frame(doy = 0:210, deriv1 = fd_d1),
     #aes(x = doy, y = (deriv1  *10 * -1) +0.3))+
   #geom_vline(xintercept=128, linetype="dashed")+
@@ -212,11 +214,16 @@ ggplot(data= data_sub_pl) +
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
-        legend.text=element_text(size=12)) +
-  labs(x="DOY", y="EVI")+
-  scale_color_manual(values=c("#1f78b4", "#d95f02","gray30"),
-                     labels=c("GAM","LOG","GAM slope"),
-                     name=" ")
+        legend.justification = c(0, 1), legend.position = c(0.03, 0.97),
+        legend.text=element_text(size=12),
+        legend.title=element_blank(),
+        legend.background = element_rect(colour = 'grey', fill = 'white', linetype='solid'))+
+  scale_linetype_manual(values=c("solid","solid","dashed"), name="",
+                        labels=c("GAM","LOG","slope GAM"))+
+  scale_color_manual(values=c("#1f78b4", "#e41a1c","gray50"),
+                     labels=c("GAM","LOG","slope GAM"),
+                     name="")+
+  labs(x="DOY", y="EVI")
 dev.off()
 
 
