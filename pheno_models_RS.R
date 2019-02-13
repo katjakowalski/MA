@@ -5,6 +5,7 @@ library(tidyverse)
 library(ggplot2)
 library(reshape2)
 library(mgcViz)
+library(numDeriv)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
@@ -15,8 +16,7 @@ data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
 
 ############################################################
 
-plotid <-259722
-
+plotid <-207429
 
   #76620
   #290507
@@ -97,11 +97,13 @@ fit_ols <- nls(evi ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
            data = data_sub)
 fit_ols
        
+f <- function(doy) 0.2458 + (0.4728 / (1 + exp(- 0.4387 * (doy - 132.4786))))
+deriv_log <- data.frame( doy = 0:197, value= (grad(f, 0:197)*2)+0.3, variable="deriv_log")
 
 fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
-fit_spl_evi$coefficients
-summary(fit_spl_evi)
-fit_spl_evi$coefficients
+#fit_spl_evi$coefficients
+#summary(fit_spl_evi)
+#fit_spl_evi$coefficients
 ####################################################################################################
 
 k <- 8
@@ -173,14 +175,12 @@ data_sub_pl <- data_sub[, c("predict_gam", "predict_log")]
 data_sub_pl <- melt(data_sub_pl)
 data_sub_pl$doy <- rep(data_sub$doy,2)
 
-df_deriv <- data.frame(doy = 0:222,value = (fd_d1*10*-1)+0.3, variable="deriv")
+df_deriv <- data.frame(doy = 0:197,value = (fd_d1*-1*4)+0.3, variable="deriv")
 
 data_sub_pl <- rbind(data_sub_pl, df_deriv)
+data_sub_pl <- rbind(data_sub_pl, deriv_log)
 
-
-
-
-
+#### plots ####
 png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/gam_169424.png", 
     width= 1200, height=1000, res=200 )
 ggplot(data= data_sub) +
@@ -200,31 +200,35 @@ ggplot(data= data_sub) +
 
 dev.off()
 
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190208_GAM_LOG.png", 
-    width= 16, height=10,unit="cm", res=200 )
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190213_GAM_LOG.png", 
+    width= 16, height=10,unit="cm", res=300 )
 ggplot(data= data_sub_pl) +
   theme_bw()+
   geom_point(data=data_sub, aes(x = doy, y = evi)) +
-  geom_line( aes(x=doy, y= value, color=variable, linetype=variable), size= 0.8) +
-  #geom_line(data = data.frame(doy = 0:210, deriv1 = fd_d1),
-    #aes(x = doy, y = (deriv1  *10 * -1) +0.3))+
-  #geom_vline(xintercept=128, linetype="dashed")+
-  #geom_vline(xintercept=125.0416, linetype="dotted")+
-  scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50))+
+  geom_line( aes(x=doy, y= value, color=variable, linetype=variable, size=variable))+ 
+  geom_point(aes(x=134, y=0.5), color="#1f78b4", shape=1, size=3)+
+  #geom_point(aes(x=134, y=0.385), color="#1f78b4", shape=4, size=3)+
+  geom_point(aes(x=132.4786, y=0.48), color="red", shape=1, size=3)+
+  #geom_point(aes(x=132.4786, y=0.385), color="#1f78b4", shape=4, size=3)+
+  scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50), limits=c(0,187))+
+  scale_y_continuous(labels=seq(0,1, 0.1), breaks=seq(0,1,0.1), limits=c(0.2,0.8))+
   theme(axis.text.x = element_text(size=12, color="black"),
-        axis.text.y = element_text(size=12, color="black"),
-        text = element_text(size=12),
-        legend.justification = c(0, 1), legend.position = c(0.03, 0.97),
-        legend.text=element_text(size=12),
-        legend.title=element_blank(),
-        legend.background = element_rect(colour = 'grey', fill = 'white', linetype='solid'))+
-  scale_linetype_manual(values=c("solid","solid","dashed"), name="",
-                        labels=c("GAM","LOG","slope GAM"))+
-  scale_color_manual(values=c("#1f78b4", "#e41a1c","gray50"),
-                     labels=c("GAM","LOG","slope GAM"),
-                     name="")+
+         axis.text.y = element_text(size=12, color="black"),
+         text = element_text(size=12),
+         legend.justification = c(0, 1), legend.position = c(0.03, 0.97),
+         legend.text=element_text(size=12),
+         legend.title=element_blank(),
+         legend.background = element_rect(colour = 'grey', fill = 'white', linetype='solid'))+
+  scale_linetype_manual(values=c("solid","solid","dashed","solid"), name="",
+                         labels=c("GAM","LOG","GAM gradient", "LOG gradient"))+
+  scale_color_manual(values=c("#1f78b4", "#e41a1c","gray40", "gray40"),
+                      labels=c("GAM","LOG","GAM gradient","LOG gradient"),
+                      name="")+
+  scale_size_manual(values=c(0.8,0.8,0.35,0.35), 
+                    labels=c("GAM","LOG","GAM gradient","LOG gradient"),
+                    name="")+
   labs(x="DOY", y="EVI")
 dev.off()
-
+#### end ####
 
 

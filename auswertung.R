@@ -196,13 +196,12 @@ data.frame("LOG_NDVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_LOG_NDVI_TT, use="comple
            "GAM_EVI" = cor(GDD_SOS$X_sum, GDD_SOS$diff_GAM_EVI_TT, use="complete.obs"),
            "PEP" = cor(GDD_SOS$X_sum, GDD_SOS$diff_PEP_TT, use="complete.obs"))
 
-ggplot(GDD_SOS)+
-  geom_point(aes(x=diff_LOG_EVI_TT, y=CD_GAM_EVI))
+data.frame("LOG_NDVI" = cor(GDD_SOS$GDD_LOG_NDVI, GDD_SOS$diff_LOG_NDVI_TT, use="complete.obs"),
+           "LOG_EVI" = cor(GDD_SOS$GDD_LOG_EVI, GDD_SOS$diff_LOG_EVI_TT, use="complete.obs"),
+           "GAM_NDVI" = cor(GDD_SOS$GDD_GAM_NDVI, GDD_SOS$diff_GAM_NDVI_TT, use="complete.obs"),
+           "GAM_EVI" = cor(GDD_SOS$GDD_GAM_EVI, GDD_SOS$diff_GAM_EVI_TT, use="complete.obs"),
+           "PEP" = cor(GDD_SOS$GDD_PEP, GDD_SOS$diff_PEP_TT, use="complete.obs"))
 
-cor(GDD_SOS$X_sum, GDD_SOS$CD_LOG_EVI,use="complete.obs")
-
-ggplot(GDD_SOS)+
-  geom_point(aes(x=Y, y=CD_GAM_NDVI))
 
 ## Residuals SQ ##
 
