@@ -74,23 +74,22 @@ tt_GDD <- function(statid,
   
   for( i in unique(data$statid)){   # loop through plots 
     
-    # subset forcing
+    # subset plot
     d = subset(data, data$statid == i)
     
-    
-    # SOS 
+    # SOS from RS
     doy_crit <- d$doy_crit[1]
     d = subset(d, d$doy <= doy_crit)
     
     forcing <- 0
     out <- NULL
     
-    if(length(d$t_day) < 10 ){
-      out <- data.frame("stat_id" = i, 
-                        "GDD" = NA)
-      SOS_LSP <- rbind(SOS_LSP, out)
-      next
-    }
+    # if(length(d$t_day) < 10 ){
+    #   out <- data.frame("stat_id" = i, 
+    #                     "GDD" = NA)
+    #   SOS_LSP <- rbind(SOS_LSP, out)
+    #   next
+    # }
     
     # forcing
     for (x in d$doy) {                  # loop through days until SOS

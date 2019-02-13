@@ -1,6 +1,117 @@
 
-#### rs models ####
+#### RS models ####
 
+## Tab. X 
+# model differences (sample)
+mean(results_ndvi$diff_px, na.rm=TRUE)
+mean(results_evi$diff_px, na.rm=TRUE)
+
+mean(results_ndvi$observations)
+mean(results_evi$observations)
+
+# Convergence (sample)
+map(results_evi[c(2,9)], function(x) mean(is.na(x)))
+map(results_ndvi[c(2,9)], function(x) mean(is.na(x)))
+
+# Correlation (sample)
+cor(results_evi$b4, results_evi$sp, use="complete.obs")
+cor(results_ndvi$b4, results_ndvi$sp, use="complete.obs")
+
+# Percentiles (sample)
+map(results_evi[c(2,9)], function(x) quantile(x, na.rm=TRUE, c(.05, .50, .95)))
+map(results_ndvi[c(2,9)], function(x) quantile(x, na.rm=TRUE, c(.05, .50, .95)))
+
+# differences between indices (sample)
+results_px <- merge(results_ndvi[, c("plotid","b4","sp","observations", "stat_id")], 
+                    results_evi[, c("plotid","b4","sp")], by="plotid")
+colnames(results_px) <- c("plotid","LOG_NDVI", "GAM_NDVI","observations", "stat_id", "LOG_EVI","GAM_EVI")
+results_px$GAM_diff <- results_px$GAM_NDVI- results_px$GAM_EVI
+results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
+
+results_px$NDVI_diff <- results_px$GAM_NDVI- results_px$LOG_NDVI
+results_px$EVI_diff <- results_px$GAM_EVI - results_px$LOG_EVI
+
+cor(results_px$LOG_NDVI, results_px$LOG_EVI, use="complete.obs")
+cor(results_px$GAM_NDVI, results_px$GAM_EVI, use="complete.obs")
+
+map(results_px[8:11], mean, na.rm=TRUE)
+
+# no. of sample fits for each station
+log_evi <- results_evi %>%
+  filter(!is.na(b4)) %>%
+  group_by(stat_id) %>%
+  summarise(n = n()) %>%
+  map(., mean)
+
+log_ndvi <- results_ndvi %>%
+  filter(!is.na(b4)) %>%
+  group_by(stat_id) %>%
+  summarise(ct = n()) %>%
+  map(., mean)
+
+
+sample_log_evi <- subset(results_evi, !is.na(b4))
+sample_log_evi <- as.data.frame(table(sample_log_evi$stat_id))
+
+sample_log_ndvi <- subset(results_ndvi, !is.na(b4))
+sample_log_ndvi <- as.data.frame(table(sample_log_ndvi$stat_id))
+
+sample_gam_ndvi <- subset(results_ndvi, !is.na(sp))
+sample_gam_ndvi <- as.data.frame(table(sample_gam_ndvi$stat_id))
+
+sample_gam_evi <- subset(results_evi, !is.na(sp))
+sample_gam_evi <- as.data.frame(table(sample_gam_evi$stat_id))
+
+sum(mean(sample_log_evi$Freq),
+    mean(sample_log_ndvi$Freq),
+    mean(sample_gam_ndvi$Freq),
+    mean(sample_gam_evi$Freq))/4
+
+# mean difference (plot)
+mean(mean_ndvi$diff_station, na.rm=TRUE)
+sd(mean_ndvi$diff_station, na.rm=TRUE)
+
+mean(mean_evi$diff_station)
+sd(mean_evi$diff_station)
+
+# mean MSE (station)
+mean(mean_evi$MSE_gam)
+mean(mean_evi$MSE_log)
+
+mean(mean_ndvi$MSE_gam)
+mean(mean_ndvi$MSE_log, na.rm=TRUE)
+
+# Correlation (station)
+cor.test(mean_ndvi$b4, mean_ndvi$sp, use="complete.obs")
+cor.test(mean_evi$b4, mean_evi$sp, use="complete.obs")
+
+# Percentiles (station)
+data.frame("LOG_NDVI" = c(quantile(mean_ndvi$b4, na.rm=TRUE, c(.05, .50, .95))),
+           "LOG_EVI"=c(quantile(mean_evi$b4, na.rm=TRUE, c(.05, .50, .95))),
+           "GAM_NDVI" = c(quantile(mean_ndvi$sp, na.rm=TRUE, c(.05, .50, .95))),
+           "GAM_EVI" = c(quantile(mean_evi$sp, na.rm=TRUE, c(.05, .50, .95)))
+)
+
+# mean SOS and sd
+
+data.frame(c(mean(mean_ndvi$b4, na.rm=TRUE),
+             mean(mean_evi$b4),
+             mean(mean_ndvi$sp),
+             mean(mean_evi$sp)))
+
+
+# differences between indices (station)
+mean_results <- merge(mean_evi[, c("stat_id","b4","sp","observations")], 
+                      mean_ndvi[, c("stat_id","b4","sp")], by="stat_id")
+colnames(mean_results) <- c("stat_id","LOG_EVI", "GAM_EVI","observations","LOG_NDVI","GAM_NDVI")
+mean_results$GAM_diff <- mean_results$GAM_NDVI - mean_results$GAM_EVI
+mean_results$LOG_diff <- mean_results$LOG_NDVI - mean_results$LOG_EVI
+
+cor.test(mean_results$LOG_NDVI, mean_results$LOG_EVI, use="complete.obs")
+cor.test(mean_results$GAM_NDVI, mean_results$GAM_EVI, use="complete.obs")
+
+mean(mean_results$LOG_diff, na.rm=TRUE)
+mean(mean_results$GAM_diff, na.rm=TRUE)
 
 #### end ####
 
@@ -171,20 +282,15 @@ cor.test(GDD_SOS$PEP_SOS, GDD_SOS$DEM)
 #### TT_GDD ####
 
 # mean GDD 
-mean(GDD_SOS$GDD_GAM_EVI, na.rm=TRUE)
-sd(GDD_SOS$GDD_GAM_EVI)
-mean(GDD_SOS$GDD_LOG_EVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_LOG_EVI)
-mean(GDD_SOS$GDD_GAM_NDVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_GAM_NDVI)
-mean(GDD_SOS$GDD_LOG_NDVI,na.rm=TRUE)
-sd(GDD_SOS$GDD_LOG_NDVI, na.rm=TRUE)
-mean(GDD_PEP$GDD_PEP, na.rm=TRUE)
+data.frame(map(GDD_SOS[c("GDD_LOG_NDVI","GDD_LOG_EVI","GDD_GAM_NDVI", 
+              "GDD_GAM_EVI", "GDD_PEP")], mean, na.rm=TRUE))
+
 
 data.frame("LOG_NDVI" =quantile(GDD_SOS$GDD_LOG_NDVI, c(0.05, 0.5, 0.95), na.rm=TRUE),
            "LOG_EVI" = quantile(GDD_SOS$GDD_LOG_EVI, c(0.05, 0.5, 0.95)),
            "GAM_NDVI" = quantile(GDD_SOS$GDD_GAM_NDVI, c(0.05, 0.5, 0.95)),
-           "GAM_EVI" = quantile(GDD_SOS$GDD_GAM_EVI, c(0.05, 0.5, 0.95)))
+           "GAM_EVI" = quantile(GDD_SOS$GDD_GAM_EVI, c(0.05, 0.5, 0.95)),
+           "PEP" = quantile(GDD_SOS$GDD_PEP, c(0.05, 0.5, 0.95)))
 
 
 
