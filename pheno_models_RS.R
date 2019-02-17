@@ -46,19 +46,35 @@ base_index_evi <- mean(subset(data_sub, data_sub$doy <= 50)$evi)
 base_index_ndvi <- mean(subset(data_sub, data_sub$doy <= 50)$ndvi)
 
 ##########################################################################
-png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/ts_169424.png", 
-    width= 1200, height=1000, res=200 )
+png(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/maps/20190214_TS_example_fit.png", 
+    width= 1400, height=1000, res=200 )
 
 ggplot(data_sub, aes(x = doy, y = evi)) +
-  geom_point(aes(shape=sensor))+
+  geom_point(aes(shape=sensor), size=2)+
+  guides(shape=FALSE)+
   #geom_line(aes(x=doy, y=predict))+
+  geom_line(data=data_sub_pl, aes(x=doy, y= value, color=variable, linetype=variable, size=variable))+ 
   labs(x="DOY", y="EVI")+
-  #scale_x_continuous(labels=seq(0,350, 100), breaks= seq(0,350, 100))+
+  scale_y_continuous(labels=seq(0,1, 0.1), breaks=seq(0,1,0.1), limits=c(0.2, 0.8))+
+  scale_x_continuous(labels=seq(0,350, 50), breaks=seq(0,350,50))+
   theme_bw()+
-  theme(axis.text.x = element_text(size=12, color="black"),
-        axis.text.y = element_text(size=12, color="black"),
-        text = element_text(size=12),
-        legend.text=element_text(size=12)) 
+  #geom_point(aes(x=134, y=0.5), color="#1f78b4", shape=1, size=3)+
+  #geom_point(aes(x=132.4786, y=0.48), color="red", shape=1, size=3)+
+  theme(axis.text.x = element_text(size=18, color="black"),
+        axis.text.y = element_text(size=18, color="black"),
+        legend.justification = c(0, 1), legend.position = c(0.03, 0.97),
+        text = element_text(size=18),
+        legend.title=element_blank(),
+        legend.text=element_text(size=14),
+        legend.background = element_rect(colour = 'grey', fill = 'white', linetype='solid'))+ 
+  scale_linetype_manual(values=c("solid","solid","dashed","solid"), name="",
+                        labels=c("GAM","LOG","GAM gradient", "LOG gradient"))+
+  scale_color_manual(values=c("#1f78b4", "#e41a1c","black", "black"),
+                     labels=c("GAM","LOG","GAM gradient","LOG gradient"),
+                     name="")+
+  scale_size_manual(values=c(0.8,0.8,0.6,0.6),
+                    labels=c("GAM","LOG","GAM gradient","LOG gradient"),
+                    name="")
 
 
 dev.off()
@@ -98,15 +114,21 @@ fit_ols <- nls(evi ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
 fit_ols
        
 f <- function(doy) 0.2458 + (0.4728 / (1 + exp(- 0.4387 * (doy - 132.4786))))
-deriv_log <- data.frame( doy = 0:197, value= (grad(f, 0:197)*2)+0.3, variable="deriv_log")
+deriv_log <- data.frame( doy = 0:197, value= (grad(f, 0:197)*4)+0.3, variable="deriv_log")
 
 fit_spl_evi <- gam(evi~ s(doy, sp= 0.005), data = data_sub)
 #fit_spl_evi$coefficients
-#summary(fit_spl_evi)
+fit_spl_evi$
+smooth_spl <- fit_spl_evi$smooth[[1]]
+smooth_spl
+attr(smooth_spl, "class")
 #fit_spl_evi$coefficients
+mat <- predict.gam(fit_spl_evi, type = "lpmatrix")
+head(mat)
+plot(x, mat[, "s(x).1"], type = "l", main = "20th basis")
 ####################################################################################################
 
-k <- 8
+k <- 10
 df <- with(data_sub, data.frame(doy = seq(min(doy), max(doy))))
 knots <- with(data_sub, list(doy = seq(min(doy), max(doy), length = k)))
 sm <- smoothCon(s(doy, k = k, bs = "cr"), data = df, knots = knots)[[1]]$X
@@ -152,7 +174,7 @@ tpbasis <- transform(tpbasis, Fun = factor(Fun, levels = levs))
 ggplot(tpbasis, aes(x = doy, y = Value, group = Fun, colour = Fun)) +
   geom_path() +
   scale_colour_discrete(name = "Basis Function") +
-  theme(legend.position = "none") +
+  theme() +
   labs(y = "d15n_label", x = "Year CE")
 
 ####################################################################################################
@@ -175,7 +197,7 @@ data_sub_pl <- data_sub[, c("predict_gam", "predict_log")]
 data_sub_pl <- melt(data_sub_pl)
 data_sub_pl$doy <- rep(data_sub$doy,2)
 
-df_deriv <- data.frame(doy = 0:197,value = (fd_d1*-1*4)+0.3, variable="deriv")
+df_deriv <- data.frame(doy = 0:197,value = (fd_d1*-1*8)+0.3, variable="deriv")
 
 data_sub_pl <- rbind(data_sub_pl, df_deriv)
 data_sub_pl <- rbind(data_sub_pl, deriv_log)
@@ -207,9 +229,7 @@ ggplot(data= data_sub_pl) +
   geom_point(data=data_sub, aes(x = doy, y = evi)) +
   geom_line( aes(x=doy, y= value, color=variable, linetype=variable, size=variable))+ 
   geom_point(aes(x=134, y=0.5), color="#1f78b4", shape=1, size=3)+
-  #geom_point(aes(x=134, y=0.385), color="#1f78b4", shape=4, size=3)+
   geom_point(aes(x=132.4786, y=0.48), color="red", shape=1, size=3)+
-  #geom_point(aes(x=132.4786, y=0.385), color="#1f78b4", shape=4, size=3)+
   scale_x_continuous(labels=seq(0,350, 50), breaks= seq(0,350, 50), limits=c(0,187))+
   scale_y_continuous(labels=seq(0,1, 0.1), breaks=seq(0,1,0.1), limits=c(0.2,0.8))+
   theme(axis.text.x = element_text(size=12, color="black"),
@@ -218,7 +238,7 @@ ggplot(data= data_sub_pl) +
          legend.justification = c(0, 1), legend.position = c(0.03, 0.97),
          legend.text=element_text(size=12),
          legend.title=element_blank(),
-         legend.background = element_rect(colour = 'grey', fill = 'white', linetype='solid'))+
+         legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'))+
   scale_linetype_manual(values=c("solid","solid","dashed","solid"), name="",
                          labels=c("GAM","LOG","GAM gradient", "LOG gradient"))+
   scale_color_manual(values=c("#1f78b4", "#e41a1c","gray40", "gray40"),

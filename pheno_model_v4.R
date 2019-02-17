@@ -2,6 +2,7 @@ library(mgcv)
 library(tidyverse)
 library(ggplot2)
 library(reshape2)
+library(dplyr)
 
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
@@ -225,13 +226,27 @@ results_ndvi <- merge(res_spl_ndvi[, c(1:8)], res_nls_ndvi[, c(4,5,7,10)], by="p
 results_evi$diff_px <- results_evi$sp - results_evi$b4
 results_ndvi$diff_px <- results_ndvi$sp - results_ndvi$b4
 
+results_evi = plyr::rename(results_evi,c("sp"="GAM_EVI","b4"="LOG_EVI", "MSE_gam" ="MSE_GAM_EVI", "MSE_log"="MSE_LOG_EVI"))
+results_ndvi = plyr::rename(results_ndvi,c("sp"="GAM_NDVI","b4"="LOG_NDVI", "MSE_gam" ="MSE_GAM_NDVI", "MSE_log"="MSE_LOG_NDVI"))
+
 # write to disk (sample)
-setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results")
-write.csv(results_evi, file = "20190201_results_px_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "20190201_results_px_ndvi.csv", row.names = FALSE)
+write.csv(results_evi, file = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_evi.csv", row.names = FALSE)
+write.csv(results_ndvi, file = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_ndvi.csv", row.names = FALSE)
 
 #results_ndvi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_ndvi.csv")
 #results_evi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_evi.csv")
+
+# sample 
+results_px <- merge(results_ndvi[, c("plotid","LOG_NDVI","GAM_NDVI","observations", "stat_id","MSE_GAM_NDVI","MSE_LOG_NDVI")], 
+                    results_evi[, c("plotid","LOG_EVI","GAM_EVI", "MSE_GAM_EVI","MSE_LOG_EVI")], by="plotid")
+results_px$GAM_diff <- results_px$GAM_NDVI- results_px$GAM_EVI
+results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
+
+results_px$NDVI_diff <- results_px$GAM_NDVI- results_px$LOG_NDVI
+results_px$EVI_diff <- results_px$GAM_EVI - results_px$LOG_EVI
+
+MSE_px <- results_px[, c("MSE_LOG_NDVI", "MSE_LOG_EVI", "MSE_GAM_NDVI", "MSE_GAM_EVI")]
+colnames(MSE_px) <- c("LOG_NDVI", "LOG_EVI", "GAM_NDVI", "GAM_EVI")
 
 # Aggregation to plots
 mean_evi <- results_evi %>%
@@ -252,7 +267,7 @@ mean_evi <- merge(mean_evi, dwd_stations[, c("X", "Y","Stations_i")], by.x="stat
 mean_ndvi <- merge(mean_ndvi, dwd_stations[, c("X", "Y", "Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 
 # write to disk 
-write.csv(mean_evi, file="20190201_results_stat_evi.csv",row.names = FALSE )
-write.csv(mean_ndvi, file="20190201_results_stat_ndvi.csv",row.names = FALSE )
+write.csv(mean_evi, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_evi.csv",row.names = FALSE )
+write.csv(mean_ndvi, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_ndvi.csv",row.names = FALSE )
 
 

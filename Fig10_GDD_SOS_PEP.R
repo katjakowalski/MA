@@ -122,15 +122,15 @@ lm1 <- lm(GAM_EVI ~ spring_mean_temp, data=GDD_SOS )
 
 p1 <- ggplot(GDD_SOS, aes(y=GAM_EVI, x=spring_mean_temp))+
   geom_point(alpha=1/2)+
-  geom_abline(intercept = 0, slope = 1, linetype="dashed",color="#383838", size=0.9)+
+  #geom_abline(intercept = 0, slope = 1, linetype="dashed",color="#383838", size=0.9)+
   theme_bw()+
   geom_smooth(method="lm", se=FALSE, size=0.6, color="black")+
   theme(axis.text.x = element_text(size=12, color="black"),
         axis.text.y = element_text(size=12, color="black"),
         text = element_text(size=12),
         legend.text=element_text(size=12)) +
-  scale_x_continuous(limits=c(2.5,12.5),breaks=seq(2.5,12.5,2.5))+
-  scale_y_continuous(limits=c(80,150),breaks= seq(0,150,20))+
+  #scale_x_continuous(limits=c(2.5,12.5),breaks=seq(2.5,12.5,2.5))+
+  #scale_y_continuous(limits=c(80,150),breaks= seq(0,150,20))+
   labs( x= "mean spring temperature [°C]", y= expression(paste("SOS ",GAM[EVI])))+
   annotate("text", y=85, x=2.5, 
            label= paste0("r = ",round(cor(GDD_SOS$GAM_EVI,GDD_SOS$spring_mean_temp, use="complete.obs"),2)), 

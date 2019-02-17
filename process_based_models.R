@@ -50,7 +50,7 @@ SOS_TT$diff_LOG_NDVI_TT <- SOS_TT$TT - SOS_TT$LOG_NDVI
 #### end ####
 
 ###############################################################################################################################
-#### TT-model - calibrated with SOS ####
+#### TT-model - using SOS ####
 
 source(file.path(root, "TT_GDD.R"))
 
@@ -99,6 +99,7 @@ GDD_PEP <- tt_GDD(
   doy_crit = data_PEP$day)
 colnames(GDD_PEP) <- c("stat_id", "GDD_PEP")
 
+
 GDD_SOS <- merge(GDD_GAM_EVI, GDD_LOG_EVI, by="stat_id", all.x=TRUE)
 GDD_SOS <- merge(GDD_SOS, GDD_GAM_NDVI, by="stat_id", all.x=TRUE)
 GDD_SOS <- merge(GDD_SOS, GDD_LOG_NDVI, by="stat_id", all.x=TRUE)
@@ -111,8 +112,8 @@ GDD_SOS <- merge(GDD_SOS, SOS_TT[, c("stat_id", "LOG_EVI", "GAM_EVI", "LOG_NDVI"
 GDD_SOS <- merge(GDD_SOS, PEP_SOS[, c("DWD_ID","day")], by.x="stat_id",by.y="DWD_ID", all.x=TRUE)
 names(GDD_SOS)[names(GDD_SOS) == 'day'] <- 'PEP_SOS'
 
-GDD_SOS$diff_PEP_TT <- GDD_SOS$TT - GDD_SOS$PEP_SOS
 
+GDD_SOS <- read.csv(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190205_GDD_SOS.csv", header=TRUE)
 
 #### end ####
 
@@ -142,7 +143,7 @@ GDD_SOS$diff_PEP_SQ <- GDD_SOS$SQ - GDD_SOS$PEP_SOS
 #### end ####
 
 ###############################################################################################################################
-#### SQ model - calibrated with SOS to count chilling days ####
+#### SQ model - using SOS to count CD ####
 
 source(file.path(root, "SQ_model_CD.R"))
 
