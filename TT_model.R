@@ -1,9 +1,9 @@
 
-setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
-tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
-
+# load temperature data (daily mean)
+tmk <- read.csv(file=file.path(path_data, "TMK_MN004.txt"), header=TRUE, sep=";")
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 
+# add missing DOY
 tmk <- tmk %>%
   group_by(STATION_ID)%>%
   mutate(datum = as.Date(datum)) %>%
@@ -14,7 +14,7 @@ tmk$doy <- yday(tmk$datum)
 
 tmk <- subset(tmk, tmk$year == 2017 & tmk$doy <= 196)
 
-# rolling mean 
+# moving average 
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
   width   = 4,
@@ -34,8 +34,8 @@ tmk <- tmk %>%
   filter(!any(is.nan(WERT))) %>%
   filter(length(STATION_ID) == 196)
 
+# Thermal Time Model 
 
-#################################################################################
 tt_model <- function(statid,
                      t_day,
                      year,

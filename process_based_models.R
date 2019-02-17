@@ -4,11 +4,11 @@ library(lubridate)
 library(tidyr)
 library(zoo)
 
-root <- "C:/Users/kowalskk/MA/MA"
+path_code <- "C:/Users/kowalskk/MA/MA"
 ###############################################################################################################################
 #### TT Model ####
 
-source(file.path(root, "TT_Model.R"))
+source(file.path(path_code, "TT_Model.R"))
 
 SOS_TT <- tt_model(
   statid = tmk$STATION_ID,
@@ -45,14 +45,12 @@ SOS_TT$diff_LOG_EVI_TT <- SOS_TT$TT - SOS_TT$LOG_EVI
 SOS_TT$diff_GAM_NDVI_TT <- SOS_TT$TT - SOS_TT$GAM_NDVI 
 SOS_TT$diff_LOG_NDVI_TT <- SOS_TT$TT - SOS_TT$LOG_NDVI 
 
-
-
 #### end ####
 
 ###############################################################################################################################
 #### TT-model - using SOS ####
 
-source(file.path(root, "TT_GDD.R"))
+source(file.path(path_code, "TT_GDD.R"))
 
 GDD_GAM_EVI <- tt_GDD(
   statid = data_input$stat_id,
@@ -119,7 +117,7 @@ GDD_SOS <- read.csv(file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/
 
 ###############################################################################################################################
 #### SQ-model ####
-source(file.path(root, "SQ_model.R"))
+source(file.path(path_code, "SQ_model.R"))
 
 SOS_SQ <- sq_model(statid=tmk$STATION_ID, 
                    t_day=tmk$WERT,
@@ -145,9 +143,9 @@ GDD_SOS$diff_PEP_SQ <- GDD_SOS$SQ - GDD_SOS$PEP_SOS
 ###############################################################################################################################
 #### SQ model - using SOS to count CD ####
 
-source(file.path(root, "SQ_model_CD.R"))
+source(file.path(path_code, "SQ_model_CD.R"))
 
-CD_GAM_EVI <- tt_CD_count(
+CD_GAM_EVI <- CD_count(
   statid = data_input$stat_id,
   t_day = data_input$WERT,
   year = data_input$year,
@@ -156,7 +154,7 @@ CD_GAM_EVI <- tt_CD_count(
   doy_crit = data_input$GAM_EVI)
 colnames(CD_GAM_EVI) <- c("stat_id", "CD_GAM_EVI")
 
-CD_LOG_EVI <- tt_CD_count(
+CD_LOG_EVI <- CD_count(
   statid = data_input$stat_id,
   t_day = data_input$WERT,
   year = data_input$year,
@@ -165,7 +163,7 @@ CD_LOG_EVI <- tt_CD_count(
   doy_crit = data_input$LOG_EVI)
 colnames(CD_LOG_EVI) <- c("stat_id", "CD_LOG_EVI")
 
-CD_LOG_NDVI <- tt_CD_count(
+CD_LOG_NDVI <- CD_count(
   statid = data_LOG_NDVI$stat_id,
   t_day = data_LOG_NDVI$WERT,
   year = data_LOG_NDVI$year,
@@ -174,7 +172,7 @@ CD_LOG_NDVI <- tt_CD_count(
   doy_crit = data_LOG_NDVI$LOG_NDVI)
 colnames(CD_LOG_NDVI) <- c("stat_id", "CD_LOG_NDVI")
 
-CD_GAM_NDVI <- tt_CD_count(
+CD_GAM_NDVI <- CD_count(
   statid = data_input$stat_id,
   t_day = data_input$WERT,
   year = data_input$year,
@@ -184,7 +182,7 @@ CD_GAM_NDVI <- tt_CD_count(
 colnames(CD_GAM_NDVI) <- c("stat_id", "CD_GAM_NDVI")
 
 
-CD_PEP <- tt_CD_count(
+CD_PEP <- CD_count(
   statid = data_PEP$stat_id,
   t_day = data_PEP$WERT,
   year = data_PEP$year,
@@ -205,11 +203,12 @@ GDD_SOS <- merge(GDD_SOS, CD_SOS , by="stat_id", all.x=TRUE)
 #### end ####
 
 #### Mean spring temperature ####
-setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk")
-tmk <- read.csv(file="TMK_MN004.txt", header=TRUE, sep=";")
 
+# load temperature data (daily mean)
+tmk <- read.csv(file=file.path(path_data, "TMK_MN004.txt"), header=TRUE, sep=";")
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 
+# fill data gaps 
 tmk <- tmk %>%
   group_by(STATION_ID)%>%
   mutate(datum = as.Date(datum)) %>%
@@ -221,7 +220,7 @@ tmk$month <- month(tmk$datum)
 
 tmk <- subset(tmk, tmk$datum > "2017-01-31" & tmk$datum < "2017-06-01")
 
-# rolling mean 
+# moving average 
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
   width   = 4,
@@ -246,10 +245,10 @@ colnames(tmk_spring) <- c("stat_id", "spring_mean_temp")
 GDD_SOS <- merge(GDD_SOS, tmk_spring[,c("spring_mean_temp", "stat_id")], by="stat_id", all.x=TRUE)
 
 # write results
-write.csv(GDD_SOS, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190205_GDD_SOS.csv",row.names = FALSE )
+write.csv(GDD_SOS, file=file.path(path_results, "20190205_GDD_SOS.csv"),row.names = FALSE )
 
 GDD_PEP <- GDD_SOS[!is.na(GDD_SOS$GDD_PEP),]
-write.csv(GDD_PEP, file="20190205_GDD_PEP.csv",row.names = FALSE )
+write.csv(GDD_PEP, file=file.path(path_results, "20190205_GDD_PEP.csv"),row.names = FALSE )
 
 
 #### end #### 

@@ -1,26 +1,33 @@
+#### load packages ####
+
 library(mgcv)
 library(tidyverse)
 library(ggplot2)
 library(reshape2)
 library(dplyr)
 
+#### end ####
+
 setwd("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/spectral")
 
-# reflectance data 
-data <- read.csv(header=TRUE, sep=",", file="data_clear.csv")
+path_data <- "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/data_USB/data"
+path_results <- "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results"
 
-data <- subset(data, dwd_stat != 379 &   # climate data missing
-                       dwd_stat != 760 & # climate data missing
-                       dwd_stat != 1503 & # climate data missing
-                       dwd_stat != 2878 & # climate data missing
-                       dwd_stat != 3490 & # climate data missing
-                       dwd_stat != 4878 & # climate data missing
-                       dwd_stat != 5100 & # climate data missing
-                       dwd_stat != 5715 & # climate data missing
-                       dwd_stat != 4485 & # climate data missing
-                       dwd_stat != 1550 &   # samples missing
-                       dwd_stat != 3679 &   # sample missing
-                       dwd_stat != 7424)    # sample missing
+data <- read.csv(header=TRUE, sep=",", file=file.path(path_data, "refl_data.csv"))
+
+# removd from data clear --> refl_data.csv 
+# data <- subset(data, dwd_stat != 379 &   # climate data missing
+#                        dwd_stat != 760 & # climate data missing
+#                        dwd_stat != 1503 & # climate data missing
+#                        dwd_stat != 2878 & # climate data missing
+#                        dwd_stat != 3490 & # climate data missing
+#                        dwd_stat != 4878 & # climate data missing
+#                        dwd_stat != 5100 & # climate data missing
+#                        dwd_stat != 5715 & # climate data missing
+#                        dwd_stat != 4485 & # climate data missing
+#                        dwd_stat != 1550 &   # samples missing
+#                        dwd_stat != 3679 &   # sample missing
+#                        dwd_stat != 7424)    # sample missing
 
 data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
 data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
@@ -230,11 +237,8 @@ results_evi = plyr::rename(results_evi,c("sp"="GAM_EVI","b4"="LOG_EVI", "MSE_gam
 results_ndvi = plyr::rename(results_ndvi,c("sp"="GAM_NDVI","b4"="LOG_NDVI", "MSE_gam" ="MSE_GAM_NDVI", "MSE_log"="MSE_LOG_NDVI"))
 
 # write to disk (sample)
-write.csv(results_evi, file = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_evi.csv", row.names = FALSE)
-write.csv(results_ndvi, file = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_ndvi.csv", row.names = FALSE)
-
-#results_ndvi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_ndvi.csv")
-#results_evi <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_px_evi.csv")
+write.csv(results_evi, file = file.path(path_results, "20190201_results_px_evi.csv"), row.names = FALSE)
+write.csv(results_ndvi, file = file.path(path_results, "20190201_results_px_ndvi.csv"), row.names = FALSE)
 
 # sample 
 results_px <- merge(results_ndvi[, c("plotid","LOG_NDVI","GAM_NDVI","observations", "stat_id","MSE_GAM_NDVI","MSE_LOG_NDVI")], 
@@ -262,12 +266,11 @@ mean_evi$diff_station <- mean_evi$sp - mean_evi$b4
 mean_ndvi$diff_station <- mean_ndvi$sp - mean_ndvi$b4
 
 # add X and Y coordinates
-dwd_stations <- read.csv("\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/20190120_stations_dwd.csv", header=TRUE)
+dwd_stations <- read.csv(file.path(root,"20190120_stations_dwd.csv"), header=TRUE)
 mean_evi <- merge(mean_evi, dwd_stations[, c("X", "Y","Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 mean_ndvi <- merge(mean_ndvi, dwd_stations[, c("X", "Y", "Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
 
 # write to disk 
-write.csv(mean_evi, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_evi.csv",row.names = FALSE )
-write.csv(mean_ndvi, file="\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/results/20190201_results_stat_ndvi.csv",row.names = FALSE )
-
+write.csv(mean_evi, file=file.path(path_results, "20190201_results_stat_evi.csv"),row.names = FALSE )
+write.csv(mean_ndvi, file=file.path(path_results, "20190201_results_stat_ndvi.csv"),row.names = FALSE )
 

@@ -1,9 +1,9 @@
 
-root_folder = "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/dwd/download/tmk"
-tmk <- read.csv(file=file.path(root_folder, "TMK_MN004.txt"), header=TRUE, sep=";")
-
+# load temperature data (daily mean)
+tmk <- read.csv(file=file.path(path_data, "TMK_MN004.txt"), header=TRUE, sep=";")
 tmk <- transform(tmk, datum = as.Date(as.character(ZEITSTEMPEL), "%Y%m%d"))
 
+# add missing DOY
 tmk <- tmk %>%
   group_by(STATION_ID)%>%
   mutate(datum = as.Date(datum)) %>%
@@ -14,6 +14,7 @@ tmk$doy <- yday(tmk$datum)
 
 tmk <- subset(tmk, tmk$datum >= "2016-09-01"  & tmk$datum <= "2017-07-15" )    
 
+# moving average
 tmk$gap_fill <- rollapply(
   data    = tmk$WERT,
   width   = 4,
@@ -26,7 +27,7 @@ tmk$gap_fill <- rollapply(
 tmk <- tmk %>%
   mutate(WERT = coalesce(WERT, gap_fill))
 
-# remove all plots with NA
+# remove plots with data gaps and shorter time series 
 tmk <- tmk %>%
   group_by(STATION_ID) %>%
   filter(!any(is.nan(WERT))) %>%
@@ -115,12 +116,3 @@ sq_model <- function(statid,
   }
   return(SOS_CD)
 }
-
-
-
-
-
-
-
-
-
