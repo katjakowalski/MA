@@ -1,0 +1,554 @@
+#### load packages ####
+library(mgcv)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(zoo)
+library(nls.multstart)
+
+# add directory here
+
+root <- "\\\\141.20.140.91/SAN_Projects/Spring/workspace/Katja/germany/MA_USB" 
+
+path_data <- file.path(root, "data")
+path_results <- file.path(root, "results")
+path_code <- file.path(root,"code")
+
+data <- read.csv(header=TRUE, sep=",", file="/RWDnew/data_clear.csv")
+#data <- read.csv(header=TRUE, sep=",", file=file.path(path_data, "data_clear.csv"))
+
+
+results_px <- read.csv(header=TRUE, sep=",", file = file.path(path_results, "SOS_px_evi.csv"))
+results_evi_old <- read.csv(header=TRUE, sep=",", file= file.path(path_results, "SOS_px_evi_mlt.csv"))
+results_ndvi <- read.csv(header=TRUE, sep=",", file= file.path(path_results, "SOS_px_ndvi_mlt.csv"))
+
+
+# set results NA where SOS day > transition day
+results_evi$GAM_EVI <- ifelse(results_evi$GAM_EVI <= results_evi$transition & results_evi$GAM_EVI > 0, results_evi$GAM_EVI, NA)
+results_evi$LOG_EVI <- ifelse(results_evi$LOG_EVI <= results_evi$transition & results_evi$LOG_EVI > 0, results_evi$LOG_EVI, NA)
+results_ndvi$GAM_NDVI <- ifelse(results_ndvi$GAM_NDVI <= results_ndvi$transition & results_ndvi$GAM_NDVI > 0, results_ndvi$GAM_NDVI, NA)
+results_ndvi$LOG_NDVI <- ifelse(results_ndvi$LOG_NDVI <= results_ndvi$transition & results_ndvi$LOG_NDVI > 0, results_ndvi$LOG_NDVI, NA)
+
+
+
+data <- subset(data, dwd_stat != 379 &   # climate data missing
+                 dwd_stat != 760 & # climate data missing
+                 dwd_stat != 1503 & # climate data missing
+                 dwd_stat != 2878 & # climate data missing
+                 dwd_stat != 3490 & # climate data missing
+                 dwd_stat != 4878 & # climate data missing
+                 dwd_stat != 5100 & # climate data missing
+                 dwd_stat != 5715 & # climate data missing
+                 dwd_stat != 4485 & # climate data missing
+                 dwd_stat != 1550 &   # samples missing
+                 dwd_stat != 3679 &   # samples missing
+                 dwd_stat != 7424)    # samples missing
+
+#data <- subset(data, dwd_stat < 300)
+#data <- subset(data, dwd_stat == 817)
+
+data_evi <- subset(data, data$evi < 1.1 & data$evi >= 0 & data$year == 2017)
+data_ndvi <- subset(data, data$ndvi < 1.1 & data$ndvi >= 0 & data$year == 2017)
+
+
+pheno_model <- function(plotid, 
+                        index, 
+                        doy, 
+                        year, 
+                        stat_id,
+                        min_obs = 10){
+  
+  data = data.frame(plotid,
+                    index, 
+                    doy, 
+                    year,
+                    stat_id)      
+  
+  l_samples <- length(unique(data$plotid))             
+  
+  nls_fit_result <- vector("list", l_samples)          
+  sp_fit_result <- vector("list", l_samples)
+  k <- 0
+  
+  for( p in unique(data$plotid)){
+    
+    transition <- c()
+    b4_start <- c()
+    
+    d = subset(data, data$plotid == p &  data$year == "2017")
+    d_c = subset(data, data$plotid == p &  data$year == "2017")
+    stat_id <- d$stat_id[1]
+    
+    k <- k + 1
+    
+    if(length(d$doy) >= min_obs){
+      
+      #ind <- (d$index < 0 & d$doy > 150)
+      #d <- d[!ind, ]
+      
+      d_tr <- subset(d, d$doy >= 75 & d$doy <= 250) 
+      transition <- with(d_tr, doy[index == max(index)]) + 20
+      
+      #print(paste(transition))
+      
+      d <- subset(d, d$doy <= transition) 
+      
+      #print(paste(length(d$doy)))
+      
+      doy_max_VI <- with(d, doy[index == max(index)]) # DOY of maximum VI
+      d_c <- d_c[order(d_c$doy),]
+      d <- d[order(d$doy),]
+      doy_max <- which.max(d$index)
+      
+      #print(paste(max(d$doy)))
+      
+      if(max(d$doy) == doy_max_VI){
+        d_rep <- d_c[doy_max +1,]
+        d <- rbind(d, d_rep)
+      }
+      
+      obs <- length(d$doy)
+      
+      #print(paste(obs))
+      
+      b4_start <- round(mean(d[which(d$index > median(d$index)), "doy"]), 0)
+      
+      
+      base_index <- mean(subset(d, d$doy <= 50)$index)
+      
+      if (is.nan(base_index)){
+        base_index <- min(d$index)
+      }
+      
+      d <- d[!d$doy <= 50,]                              # delete all rows < doy 50
+      
+      df_base <- d[0,]                                   # create empty df with column names
+      df_base[c(1:50), ] <- rep(NA, ncol(df_base))       # fill 50 rows with NA
+      df_base$index <- base_index
+      df_base$doy <- seq(1,50,1)
+      
+      dat <- rbind(d, df_base)
+      
+      #LOGISTIC MODEL
+      
+      
+      
+      nls_fit <- tryCatch(nls_multstart(index ~ b1 + (b2 / (1 + exp(- b3 * (doy - b4)))),
+                                        data = dat,
+                                        iter = c(1,1,10,1),
+                                        start_lower= c(b1 = min(dat$index),
+                                                       b2 = max(dat$index),
+                                                       b3 = 0,
+                                                       b4 = b4_start),
+                                        start_upper= c(b1 = min(dat$index),
+                                                       b2 = max(dat$index),
+                                                       b3 = 1,
+                                                       b4 = b4_start),
+                                        supp_errors = "Y", 
+                                        convergence_count = FALSE,
+                                        na.action = na.omit), 
+                          error = function(e)
+                            return(NA)) 
+      
+      if (class(nls_fit) == "nls") {
+        
+        #print(paste(coef(nls_fit)))
+        
+        dat$predict_nls <- predict(nls_fit)
+        mse_log <- mean(abs(dat$predict_nls - dat$index)^2)
+        
+        nls_fit_result[[k]] <- as.data.frame(data.frame(t(coef(nls_fit)), 
+                                                        "plotid"=p,
+                                                        "obs_error"= 0,
+                                                        "fit_error"= 0,
+                                                        "transition" = transition,
+                                                        "observations" = obs,
+                                                        "MSE_log" = mse_log,
+                                                        "stat_id" = stat_id))
+        
+      }
+      # if class NA:
+      else {
+        nls_fit_result[[k]] <- as.data.frame(data.frame("b1" = NA,
+                                                        "b2" = NA,
+                                                        "b3" = NA,
+                                                        "b4" =NA, 
+                                                        "plotid" = p,
+                                                        "obs_error" = 0,
+                                                        "fit_error" = 1,
+                                                        "transition" = transition,
+                                                        "observations" = obs,
+                                                        "MSE_log" = NA,
+                                                        "stat_id" = stat_id))
+      }
+      
+      
+      #GAM
+      
+      fit_sp <- tryCatch(gam(index ~ s(doy, sp = 0.005),method="REML", data = dat), error = function(e) return(NA))
+      
+      # approximation of 1st derivative using finite differences 
+      
+      if(class(fit_sp) == "gam"){
+        
+        for(i in 1:3){
+          
+          dat$predict_gam <- predict(fit_sp)
+          
+          dat$weight <- (dat$index/dat$predict_gam)^4
+          dat$weight[dat$weight > 1] <- 1
+          
+          fit_sp <- tryCatch(gam(index ~ s(doy, sp = 0.005), method="REML", weights=weight, data = dat),error = function(e) return(NA))
+          
+        }
+        
+        dat$predict_gam <- predict(fit_sp)
+        
+        mse_gam <- mean(abs(dat$predict_gam - dat$index)^2)
+        
+        newDF <- with(dat, data.frame(doy = seq(0, max(dat$doy), 1)))  
+        
+        B <- predict(fit_sp,  newDF, type = "response", se.fit = TRUE)
+        
+        
+        eps <- 1e-7
+        X0 <- predict(fit_sp, newDF, type = 'lpmatrix')
+        
+        newDFeps_p <- newDF + eps
+        
+        X1 <- predict(fit_sp, newDFeps_p, type = 'lpmatrix')
+        
+        Xp <- (X0 - X1) / eps
+        
+        fd_d1 <- Xp %*% coef(fit_sp)
+        
+        sp_doy <- which.min(fd_d1)
+        
+        #if(sp_doy >=150){
+
+  
+        
+        
+        sp_fit_result[[k]] <- as.data.frame(data.frame("sp" = sp_doy, 
+                                                       "plotid"=p,
+                                                       "obs_error_sp" = 0,
+                                                       "fit_error_sp" = 0,
+                                                       "transition" = transition,
+                                                       "observations" = obs,
+                                                       "MSE_gam" = mse_gam,
+                                                       "stat_id" = stat_id))
+        
+        fd_d1 = NULL
+        fit_sp = NULL
+      }
+      # if class NA: 
+      else {
+        sp_fit_result[[k]] <- as.data.frame(data.frame("sp" = NA, 
+                                                       "plotid" = p,
+                                                       "obs_error_sp" = 0,
+                                                       "fit_error_sp"= 1,
+                                                       "transition" = transition,
+                                                       "observations" = obs,
+                                                       "MSE_gam" = NA, 
+                                                       "stat_id" = stat_id))
+      }
+    }
+    # if observations < 10:
+    else {
+      sp_fit_result[[k]] <- as.data.frame(data.frame("sp" = NA, 
+                                                     "plotid"= p, 
+                                                     "obs_error_sp" = 1,
+                                                     "fit_error_sp" = 0,
+                                                     "transition" = 0,
+                                                     "observations" = NA,
+                                                     "MSE_gam" = NA,
+                                                     "stat_id" = stat_id))
+      
+      nls_fit_result [[k]] <- as.data.frame(data.frame("b1" = NA,
+                                                       "b2" = NA,
+                                                       "b3" = NA,
+                                                       "b4" = NA,
+                                                       "plotid"=p, 
+                                                       "obs_error" = 1,
+                                                       "fit_error" = 0,
+                                                       "transition" = 0,
+                                                       "observations" = NA,
+                                                       "MSE_log" = NA,
+                                                       "stat_id" = stat_id))
+    }
+  }
+  return(list(nls_fit_result, sp_fit_result))
+}
+
+# apply function using EVI and NDVI data
+ptm <- proc.time()
+pheno_result_evi <- pheno_model(data_evi$plotid, data_evi$evi, data_evi$doy, data_evi$year, data_evi$dwd_stat)
+(proc.time() - ptm) / 60
+
+ptm <- proc.time()
+pheno_result_ndvi <- pheno_model(data_ndvi$plotid, data_ndvi$ndvi, data_ndvi$doy, data_ndvi$year, data_ndvi$dwd_stat)
+(proc.time() - ptm) / 60
+
+res_nls_evi <- data.frame(do.call(rbind, pheno_result_evi[[1]]))
+res_spl_evi <- data.frame(do.call(rbind, pheno_result_evi[[2]]))
+results_evi <- merge(res_spl_evi[, c(1:8)], res_nls_evi[, c(4,5,7,10)], by="plotid")
+
+res_nls_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[1]]))
+res_spl_ndvi <- data.frame(do.call(rbind, pheno_result_ndvi[[2]]))
+results_ndvi <- merge(res_spl_ndvi[, c(1:8)], res_nls_ndvi[, c(4,5,7,10)], by="plotid")
+
+cor(results_evi$sp, results_evi$b4, use="complete.obs")
+
+ggplot(results_evi)+ylim(0,300)+
+  geom_point(aes(x=observations_log_evi, y=LOG_EVI), alpha=0.2)
+
+ggplot(results_ndvi)+ ylim(0,300)+
+  geom_point(aes(x=observations_gam_ndvi, y=GAM_NDVI), alpha=0.2)
+
+
+cor(results_evi$GAM_EVI, results_evi$observations_gam_evi, use="complete.obs")
+cor(results_evi$LOG_EVI, results_evi$observations_log_evi, use="complete.obs")
+
+
+ggplot(results_ndvi)+
+  geom_point(aes(x=LOG_NDVI, y=GAM_NDVI))+
+  geom_abline(aes(intercept=0, slope=1))
+
+# model differences (sample)
+results_evi$diff_px <- results_evi$sp - results_evi$b4
+results_ndvi$diff_px <- results_ndvi$sp - results_ndvi$b4
+
+results_evi <- results_evi %>% 
+  rename("LOG_EVI" = "b4", "GAM_EVI" = "sp", 
+         "MSE_GAM_EVI" ="MSE_gam", "MSE_LOG_EVI"="MSE_log") 
+
+results_ndvi <- results_ndvi %>% 
+  rename("LOG_NDVI" ="b4", "GAM_NDVI"="sp",
+         "MSE_GAM_NDVI"="MSE_gam", "MSE_LOG_NDVI"="MSE_log") 
+
+results_evi$observations_gam_evi <- results_evi$observations
+results_evi$observations_log_evi <- ifelse(results_evi$fit_error == 1, NA, results_evi$observations)
+
+#results_evi_old$observations_gam_evi <- results_evi_old$observations
+#results_evi_old$observations_log_evi <- ifelse(results_evi_old$fit_error == 1, NA, results_evi_old$observations)
+
+
+results_ndvi$observations_gam_ndvi <- results_evi$observations
+results_ndvi$observations_log_ndvi <- ifelse(results_ndvi$fit_error == 1, NA, results_ndvi$observations)
+
+# write to disk (sample)
+write.csv(results_evi, file =  "/RWDnew/SOS_px_evi_v5.csv", row.names = FALSE)
+write.csv(results_ndvi, file =  "/RWDnew/SOS_px_ndvi_v5.csv", row.names = FALSE)
+
+#results_evi <- read.csv(file.path(path_results,"SOS_px_evi.csv"))
+#results_ndvi <- read.csv(file.path(path_results,"SOS_px_ndvi.csv"))
+
+# sample 
+results_px <- merge(results_ndvi[, c("plotid","LOG_NDVI","GAM_NDVI","observations", "stat_id","MSE_GAM_NDVI","MSE_LOG_NDVI")], 
+                    results_evi[, c("plotid","LOG_EVI","GAM_EVI", "MSE_GAM_EVI","MSE_LOG_EVI")], by="plotid")
+results_px$GAM_diff <- results_px$GAM_NDVI- results_px$GAM_EVI
+results_px$LOG_diff <- results_px$LOG_NDVI - results_px$LOG_EVI
+
+results_px$NDVI_diff <- results_px$GAM_NDVI- results_px$LOG_NDVI
+results_px$EVI_diff <- results_px$GAM_EVI - results_px$LOG_EVI
+
+MSE_px <- results_px[, c("MSE_LOG_NDVI", "MSE_LOG_EVI", "MSE_GAM_NDVI", "MSE_GAM_EVI")]
+colnames(MSE_px) <- c("LOG_NDVI", "LOG_EVI", "GAM_NDVI", "GAM_EVI")
+
+# Aggregation to plots
+mean_evi <- results_evi %>%
+  group_by(stat_id) %>%
+  summarise_all(funs(mean), na.rm=TRUE)
+
+mean_ndvi <- results_ndvi %>%
+  group_by(stat_id) %>%
+  summarise_all(funs(mean), na.rm=TRUE)
+
+#### PEP SOS ####
+# load PEP data for 2017 
+data_PEP <- read.csv(file = file.path(path_data, "PEP725_Kowalski.csv"), header = TRUE, sep = ";")
+PEP_stats <- read.csv(file = file.path(path_data,"PEP_DWD_stat.csv"), header = TRUE, sep = ",")
+
+# select BBCH phase of leaf unfolding (11)
+PEP_SOS <- subset(data_PEP, data_PEP$phase_id == 11)
+colnames(PEP_SOS)[1] <- "PEP_ID"
+
+PEP <- merge(PEP_stats, PEP_SOS[, c("day", "PEP_ID", "species")], by = "PEP_ID", all =TRUE)
+PEP <- PEP[!is.na(PEP$day),]
+PEP <- PEP[!is.na(PEP$DWD_ID),]
+PEP_SOS <- aggregate(day ~ DWD_ID, data = PEP, mean)
+
+mean_evi <- merge(mean_evi, PEP_SOS, by.x="stat_id", by.y="DWD_ID", all.x=TRUE)
+mean_ndvi <- merge(mean_ndvi, PEP_SOS, by.x="stat_id", by.y="DWD_ID", all.x=TRUE)
+
+
+#### end ####
+
+cor(mean_ndvi$GAM_NDVI, mean_ndvi$LOG_NDVI, use="complete.obs")
+cor(mean_evi$GAM_EVI, mean_evi$LOG_EVI, use="complete.obs")
+
+
+p1 <- ggplot(mean_evi)+
+  geom_point(aes(x=LOG_EVI, y=GAM_EVI),alpha=0.3)+
+  geom_abline(aes(intercept=0, slope=1))
+
+p2 <- ggplot(mean_ndvi)+
+  geom_point(aes(x=LOG_NDVI, y=GAM_NDVI),alpha=0.3)+
+  geom_abline(aes(intercept=0, slope=1))
+
+grid.arrange(p1, p2, nrow=1)
+
+mean(mean_evi$MSE_GAM_EVI)
+mean(mean_evi$MSE_LOG_EVI)
+
+mean(mean_ndvi$MSE_GAM_NDVI, na.rm=TRUE)
+mean(mean_ndvi$MSE_LOG_NDVI, na.rm=TRUE)
+
+
+# model differences (plot)
+mean_evi$diff_station <- mean_evi$GAM_EVI - mean_evi$LOG_EVI
+mean_ndvi$diff_station <- mean_ndvi$GAM_NDVI - mean_ndvi$LOG_NDVI
+
+mean(mean_evi$diff_station)
+mean(mean_ndvi$diff_station)
+
+# VI differences 
+mean_results <- merge(mean_evi[, c("stat_id","LOG_EVI","GAM_EVI","observations", "day")], 
+                      mean_ndvi[, c("stat_id","LOG_NDVI","GAM_NDVI")], by="stat_id")
+
+mean_results$GAM_diff <- mean_results$GAM_NDVI- mean_results$GAM_EVI
+mean_results$LOG_diff <- mean_results$LOG_NDVI - mean_results$LOG_EVI
+
+mean_results$NDVI_diff <- mean_results$GAM_NDVI - mean_results$LOG_NDVI
+mean_results$EVI_diff <- mean_results$GAM_EVI - mean_results$LOG_EVI
+
+mean(mean_results$NDVI_diff)
+mean(mean_results$EVI_diff)
+
+mean(mean_results$GAM_diff)
+mean(mean_results$LOG_diff)
+
+cor(mean_results$LOG_EVI, mean_results$LOG_NDVI, use="complete.obs")
+cor(mean_results$GAM_EVI, mean_results$GAM_NDVI, use="complete.obs")
+
+ggplot(mean_results)+
+  geom_density(aes(x=LOG_EVI))+
+  geom_density(aes(x=GAM_EVI), color="red")+
+  geom_density(aes(x=LOG_NDVI), color="blue")+
+  geom_density(aes(x=GAM_NDVI), color="green")
+
+# add X and Y coordinates
+dwd_stations <- read.csv(file.path(path_data,"20190120_stations_dwd.csv"), header=TRUE)
+mean_evi <- merge(mean_evi, dwd_stations[, c("X", "Y","DEM","Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
+mean_ndvi <- merge(mean_ndvi, dwd_stations[, c("X", "Y", "DEM", "Stations_i")], by.x="stat_id", by.y="Stations_i", all.x=TRUE)
+
+# write to disk 
+write.csv(mean_evi, file=file.path(path_results, "SOS_plot_evi_mlt_gam.csv"),row.names = FALSE )
+write.csv(mean_ndvi, file=file.path(path_results, "SOS_plot_ndvi_mlt_gam.csv"),row.names = FALSE )
+
+#### diff SOS PEP & obs #### 
+mean_evi$diff_GAM_EVI_PEP <- mean_evi$day - mean_evi$GAM_EVI
+mean_evi$diff_LOG_EVI_PEP <- mean_evi$day - mean_evi$LOG_EVI
+
+mean_ndvi$diff_GAM_NDVI_PEP <- mean_ndvi$day - mean_ndvi$GAM_NDVI
+mean_ndvi$diff_LOG_NDVI_PEP <- mean_ndvi$day - mean_ndvi$LOG_NDVI
+
+
+
+#### differences PEP & observations ####
+cor(mean_evi$observations, mean_evi$diff_GAM_EVI_PEP, use="complete.obs")
+cor(mean_evi$observations, mean_evi$diff_LOG_EVI_PEP, use="complete.obs")
+
+cor(mean_ndvi$observations, mean_ndvi$diff_LOG_NDVI_PEP, use="complete.obs")
+cor(mean_ndvi$observations, mean_ndvi$diff_GAM_NDVI_PEP, use="complete.obs")
+#### end ####
+
+#### SOS & observations ####
+cor(mean_ndvi$observations, mean_ndvi$LOG_NDVI, use="complete.obs")
+cor(mean_ndvi$observations, mean_ndvi$GAM_NDVI, use="complete.obs")
+
+cor(mean_evi$observations, mean_evi$LOG_EVI, use="complete.obs")
+cor(mean_evi$observations, mean_evi$GAM_EVI, use="complete.obs")
+
+ggplot(mean_ndvi)+
+  geom_point(aes(x=observations, y=GAM_NDVI))
+
+cor(results_evi$GAM_EVI, results_evi$observations, use="complete.obs")
+cor(results_evi$LOG_EVI, results_evi$observations, use="complete.obs")
+
+cor(results_ndvi$LOG_NDVI, results_ndvi$observations, use="complete.obs")
+cor(results_ndvi$GAM_NDVI, results_ndvi$observations, use="complete.obs")
+
+
+ggplot(mean_ndvi)+
+  geom_point(aes(x=observations, y=diff_GAM_NDVI_PEP))
+#### end ####
+
+
+#### end ####
+
+mean_evi <- merge(mean_evi, GDD_SOS[,c("DEM", "stat_id")], by="stat_id")
+
+ggplot(results_evi)+
+  geom_point(aes(x=observations, y=GAM_EVI, color=as.factor(fit_error)), alpha=0.3)+
+  scale_color_manual(values=c("grey", "blue"))
+
+ggplot(results_ndvi)+
+  geom_point(aes(x=observations, y=GAM_NDVI, color=as.factor(fit_error)), alpha=0.3)+
+  scale_color_manual(values=c("grey", "blue"))
+
+
+####
+
+tab_2_mlt_gam <- data.frame(
+  "r_sample" = c(
+    cor(results_px$LOG_EVI, results_px$GAM_EVI, use = "complete.obs"),
+    cor(results_px$LOG_NDVI, results_px$GAM_NDVI, use = "complete.obs"),
+    cor(results_px$LOG_NDVI, results_px$LOG_EVI, use = "complete.obs"),
+    cor(results_px$GAM_NDVI, results_px$GAM_EVI, use = "complete.obs")
+  ),
+  "r_plot" = c(
+    cor(mean_results$LOG_EVI, mean_results$GAM_EVI),
+    cor(mean_results$LOG_NDVI, mean_results$GAM_NDVI, use = "complete.obs"),
+    cor(mean_results$LOG_NDVI, mean_results$LOG_EVI, use = "complete.obs"),
+    cor(mean_results$GAM_EVI, mean_results$GAM_NDVI)
+  ),
+  "mean_diff_sample" = c(
+    mean(results_evi$diff_px, na.rm = TRUE),
+    mean(results_ndvi$diff_px, na.rm = TRUE),
+    mean(results_px$LOG_diff, na.rm = TRUE),
+    mean(results_px$GAM_diff, na.rm = TRUE)
+  ),
+  "mean_diff_plot" = c(
+    mean(mean_evi$diff_station),
+    mean(mean_ndvi$diff_station, na.rm = TRUE),
+    mean(mean_results$LOG_diff, na.rm = TRUE),
+    mean(mean_results$GAM_diff, na.rm = TRUE)
+  )
+)
+tab_2_mlt_gam <- as.data.frame(t(tab_2_mlt_gam))
+colnames(tab_2_mlt_gam) <- c("LOG_EVI_GAM_EVI", "LOG_NDVI_GAM_NDVI","LOG_NDVI_LOG_EVI", "GAM_NDVI_GAM_EVI")     
+
+write.csv(tab_2_mlt_gam, file=file.path(path_results,"tab_2_mlt_gam.csv"))
+
+
+cor(results_evi$observations_gam_evi, results_evi$GAM_EVI, use="complete.obs")
+cor(results_ndvi$observations_log_ndvi, results_ndvi$LOG_NDVI, use="complete.obs")
+
+cor(mean_evi$observations_log_evi, mean_evi$LOG_EVI, use="complete.obs")
+
+ggplot(results_evi)+ ylim(c(0,300))+
+  geom_point(aes(x=observations_log_evi, y=GAM_EVI), alpha=0.2)
+
+ggplot(results_ndvi)+ ylim(c(0,300))+
+  geom_point(aes(x=observations_log_ndvi, y=GAM_NDVI), alpha=0.2)
+
+p1 <- ggplot(results_evi_old)+ylim(c(0,300))+
+  geom_point(aes(x=observations_log_evi, y=LOG_EVI), alpha=0.2)
+
+sub <- subset(results_ndvi, (GAM_NDVI > 150 & observations < 15 ))
+
+grid.arrange(p1,p2, nrow=1)
+
+mean(!is.na(results_evi$LOG_EVI))
+cor(mean_evi$GAM_EVI, mean_evi$LOG_EVI)
